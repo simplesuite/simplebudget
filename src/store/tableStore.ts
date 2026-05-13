@@ -32,23 +32,23 @@ interface TableState {
 }
 
 export const useTableStore = create<TableState>((set) => ({
-    shared: { recordID: '1', budgetID: '1', sharedToID: '' },
+    shared: null,
     setShared: (val) => set({ shared: val }),
-    budgets: [{ recordID: '1', creatorID: '123', budgetName: 'Default1' }],
+    budgets: [],
     setBudgets: (val) => set((state) => ({
         budgets: typeof val === 'function' ? val(state.budgets) : val,
     })),
     currentBudgetAndMonth: currentBudget,
     setCurrentBudgetAndMonth: (val) => set({ currentBudgetAndMonth: val }),
-    transactions: [{ recordID: '1', budgetID: '1', categoryID: '1', amount: 0, title: 'D1', transactionDate: dayjs('11/22/22').valueOf(), transactionType: 'income', creatorID: '123' }],
+    transactions: [],
     setTransactions: (val) => set((state) => ({
         transactions: typeof val === 'function' ? val(state.transactions) : val,
     })),
-    categories: [{ recordID: '1', sectionID: '1', categoryName: 'Default', amount: 0 }],
+    categories: [],
     setCategories: (val) => set((state) => ({
         categories: typeof val === 'function' ? val(state.categories) : val,
     })),
-    sections: [{ recordID: '1', budgetID: '1', sectionName: 'Income', sectionType: 'income', sectionYear: 2022, sectionMonth: 'December' }],
+    sections: [],
     setSections: (val) => set((state) => ({
         sections: typeof val === 'function' ? val(state.sections) : val,
     })),
