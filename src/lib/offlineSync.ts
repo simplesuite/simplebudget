@@ -76,6 +76,11 @@ export async function syncPendingTransactions(): Promise<{ synced: number; faile
         // Update pending count
         const count = await pendingCount();
         useOfflineStore.getState().setPendingCount(count);
+        // If we still have pending items after sync attempt, we're effectively offline
+        // (navigator.onLine lied to us)
+        if (count > 0 && failed > 0) {
+            useOfflineStore.getState().setIsOnline(false);
+        }
     }
 
     return { synced, failed };
@@ -122,7 +127,8 @@ async function syncSingleTransaction(transaction: Omit<PendingTransaction, '_que
         }
         // If it's some other error, leave it in the queue for the next full sync
     } catch {
-        // Timeout or network failure — leave in queue, will sync later
+        // Timeout or network failure — we're effectively offline
+        useOfflineStore.getState().setIsOnline(false);
     }
 }
 
