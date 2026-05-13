@@ -16,6 +16,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import AddIcon from "@mui/icons-material/Add";
 import { supabase } from "../../lib/supabase";
 import { ensureSession } from "../extras/ensureSession";
+import { withNetworkTimeout } from "../../lib/networkUtils";
 import CloseIcon from '@mui/icons-material/Close';
 import IconButton from "@mui/material/IconButton";
 import { useTheme } from "@mui/material/styles";
@@ -55,28 +56,33 @@ export default function AddCategory() {
         setErrorText('')
         if (verifyInputs()) {
             setLoadingOpen(true)
-            await ensureSession();
-            let newCategory = {
-                recordID: uuidv4(),
-                sectionID: currentSectionID,
-                categoryName: categoryName,
-                //@ts-ignore
-                amount: categoryAmount === '' ? 0 : Number(categoryAmount)
-            };
-            let { error } = await supabase
-                .from('categories')
-                .insert(newCategory)
-            if (error) {
+            try {
+                await withNetworkTimeout(ensureSession());
+                let newCategory = {
+                    recordID: uuidv4(),
+                    sectionID: currentSectionID,
+                    categoryName: categoryName,
+                    //@ts-ignore
+                    amount: categoryAmount === '' ? 0 : Number(categoryAmount)
+                };
+                let { error } = await withNetworkTimeout(
+                    Promise.resolve(supabase.from('categories').insert(newCategory))
+                ) as { error: any };
+                if (error) {
+                    setLoadingOpen(false)
+                    setErrorText(error.message)
+                    return
+                }
+                setCategoryArray(prevState => [...prevState, newCategory]);
+                setAddNewCategory(false)
                 setLoadingOpen(false)
-                setErrorText(error.message)
-                return
+                setSnackSev('success')
+                setSnackText('Category Added!')
+                setSnackOpen(true)
+            } catch (err: any) {
+                setLoadingOpen(false)
+                setErrorText(err.message || 'Network error — try again when online')
             }
-            setCategoryArray(prevState => [...prevState, newCategory]);
-            setAddNewCategory(false)
-            setLoadingOpen(false)
-            setSnackSev('success')
-            setSnackText('Category Added!')
-            setSnackOpen(true)
         }
     }
     const handleFocus = (event: any) => {

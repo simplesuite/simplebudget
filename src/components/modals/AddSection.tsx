@@ -16,6 +16,7 @@ import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import AddIcon from '@mui/icons-material/Add';
 import { supabase } from "../../lib/supabase";
 import { ensureSession } from "../extras/ensureSession";
+import { withNetworkTimeout } from "../../lib/networkUtils";
 import CloseIcon from '@mui/icons-material/Close';
 import IconButton from "@mui/material/IconButton";
 import Button from "@mui/material/Button";
@@ -63,29 +64,34 @@ export default function AddSection() {
         setErrorText('')
         if (verifyInputs()) {
             setLoadingOpen(true)
-            await ensureSession();
-            let newSection = {
-                recordID: uuidv4(),
-                budgetID: currentBudget.budgetID,
-                sectionName: sectionName,
-                sectionType: sectionType,
-                sectionYear: currentBudget.year,
-                sectionMonth: currentBudget.month,
-            };
-            let { error } = await supabase
-                .from('sections')
-                .insert(newSection)
-            if (error) {
+            try {
+                await withNetworkTimeout(ensureSession());
+                let newSection = {
+                    recordID: uuidv4(),
+                    budgetID: currentBudget.budgetID,
+                    sectionName: sectionName,
+                    sectionType: sectionType,
+                    sectionYear: currentBudget.year,
+                    sectionMonth: currentBudget.month,
+                };
+                let { error } = await withNetworkTimeout(
+                    Promise.resolve(supabase.from('sections').insert(newSection))
+                ) as { error: any };
+                if (error) {
+                    setLoadingOpen(false)
+                    setErrorText(error.message)
+                    return
+                }
+                setSectionArray(prevState => [...prevState, newSection]);
+                setAddNewSection(false)
                 setLoadingOpen(false)
-                setErrorText(error.message)
-                return
+                setSnackSev('success')
+                setSnackText('Section Added!')
+                setSnackOpen(true)
+            } catch (err: any) {
+                setLoadingOpen(false)
+                setErrorText(err.message || 'Network error — try again when online')
             }
-            setSectionArray(prevState => [...prevState, newSection]);
-            setAddNewSection(false)
-            setLoadingOpen(false)
-            setSnackSev('success')
-            setSnackText('Section Added!')
-            setSnackOpen(true)
         }
     }
     React.useEffect(() => {
