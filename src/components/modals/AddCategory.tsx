@@ -20,9 +20,11 @@ import CloseIcon from '@mui/icons-material/Close';
 import IconButton from "@mui/material/IconButton";
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
+import OfflineAlert, { useIsOffline } from "../extras/OfflineAlert";
 
 export default function AddCategory() {
     const setLoadingOpen = useGlobalStore(s => s.setMainLoading)
+    const offline = useIsOffline();
     const addNewCategory = useModalStore(s => s.addCategory);
     const setAddNewCategory = useModalStore(s => s.setAddCategory);
     const [categoryName, setCategoryName] = React.useState('');
@@ -102,6 +104,7 @@ export default function AddCategory() {
                     </DialogTitle>
                     <DialogContent dividers>
                         <Grid container spacing={2}>
+                            <OfflineAlert />
                             <Typography>Adding to: {currentSectionName}</Typography>
                             <Grid size={12}>
                                 <TextField
@@ -136,7 +139,7 @@ export default function AddCategory() {
                     </DialogContent>
                     <Box sx={{ mx: 1, mt: 0.5 }}><Typography color='error'>{errorText}</Typography></Box>
                     <DialogActions>
-                        <Button fullWidth startIcon={<AddIcon />} variant='contained' type='submit'>Add Category</Button>
+                        <Button fullWidth startIcon={<AddIcon />} variant='contained' type='submit' disabled={offline}>Add Category</Button>
                     </DialogActions>
                 </Box>
             </Dialog>

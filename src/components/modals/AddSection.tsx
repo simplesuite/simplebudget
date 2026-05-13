@@ -21,9 +21,11 @@ import IconButton from "@mui/material/IconButton";
 import Button from "@mui/material/Button";
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
+import OfflineAlert, { useIsOffline } from "../extras/OfflineAlert";
 
 export default function AddSection() {
     const setLoadingOpen = useGlobalStore(s => s.setMainLoading)
+    const offline = useIsOffline();
     const addNewSection = useModalStore(s => s.addSection);
     const setAddNewSection = useModalStore(s => s.setAddSection);
     const [sectionName, setSectionName] = React.useState('');
@@ -106,6 +108,7 @@ export default function AddSection() {
                     </DialogTitle>
                     <DialogContent dividers>
                         <Grid container spacing={2}>
+                            <OfflineAlert />
                             <Grid size={12}>
                                 <ToggleButtonGroup
                                     color="success"
@@ -132,7 +135,7 @@ export default function AddSection() {
                     </DialogContent>
                     <Box sx={{ mx: 1, mt: 0.5 }}><Typography color='error'>{errorText}</Typography></Box>
                     <DialogActions>
-                        <Button fullWidth startIcon={<AddIcon />} type='submit' variant='contained'>Add Section</Button>
+                        <Button fullWidth startIcon={<AddIcon />} type='submit' variant='contained' disabled={offline}>Add Section</Button>
                     </DialogActions>
                 </Box>
             </Dialog>

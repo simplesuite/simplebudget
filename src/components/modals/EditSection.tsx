@@ -28,9 +28,11 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import ToggleButton from "@mui/material/ToggleButton";
+import OfflineAlert, { useIsOffline } from "../extras/OfflineAlert";
 
 export default function EditSection() {
     const setLoadingOpen = useGlobalStore(s => s.setMainLoading)
+    const offline = useIsOffline();
     const openEditSection = useModalStore(s => s.editSection);
     const setOpenEditSection = useModalStore(s => s.setEditSection);
     const transactionsArray = useTableStore(s => s.transactions)
@@ -221,6 +223,7 @@ export default function EditSection() {
                     </DialogTitle>
                     <DialogContent dividers>
                         <Grid container spacing={2}>
+                            <OfflineAlert />
                             <Grid size={12}>
                                 <ToggleButtonGroup
                                     color="success"
@@ -248,7 +251,7 @@ export default function EditSection() {
                     </DialogContent>
                     <Box sx={{ mx: 1, mt: 0.5 }}><Typography color='error'>{errorText}</Typography></Box>
                     <DialogActions>
-                        <Button fullWidth startIcon={<SaveIcon />} variant='contained' type='submit'>Save Changes</Button>
+                        <Button fullWidth startIcon={<SaveIcon />} variant='contained' type='submit' disabled={offline}>Save Changes</Button>
                     </DialogActions>
                 </Box>
             </Dialog>
@@ -263,7 +266,7 @@ export default function EditSection() {
                 open={moreOpen}
                 onClose={handleClose}
             >
-                <MenuItem onClick={handleDoubleCheck}>
+                <MenuItem onClick={handleDoubleCheck} disabled={offline}>
                     <DeleteIcon />
                     Delete
                 </MenuItem>

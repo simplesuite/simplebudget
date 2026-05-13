@@ -47,6 +47,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import TextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
 import SaveIcon from '@mui/icons-material/Save';
+import { useIsOffline } from "./extras/OfflineAlert";
 
 const formatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -59,6 +60,7 @@ export default function BudgetPage() {
     const transactionsArray = useTableStore(s => s.transactions)
     const setOpenCopyBudget = useModalStore(s => s.setCopyBudget)
     const { balanceCategory, allocateRestOfBudget, promptDeleteCategory, deleteCategory, updateCategory } = useCategoryActions();
+    const offline = useIsOffline();
     const [sidebarAnchorEl, setSidebarAnchorEl] = React.useState<null | HTMLElement>(null);
     const sidebarMenuOpen = Boolean(sidebarAnchorEl);
     const [sidebarEditMode, setSidebarEditMode] = React.useState(false);
@@ -377,7 +379,7 @@ export default function BudgetPage() {
                             <BudgetSection sectionID={row.recordID} key={row.recordID} />
                         )
                         )}
-                        <Button variant='outlined' color='secondary' startIcon={<PostAddIcon />} onClick={() => setAddNewSection(true)}>Add Section</Button>
+                        <Button variant='outlined' color='secondary' startIcon={<PostAddIcon />} onClick={() => setAddNewSection(true)} disabled={offline}>Add Section</Button>
                     </Stack>
                 </Box>
 
@@ -407,6 +409,7 @@ export default function BudgetPage() {
                                                     }} />
                                                 <Button size='small' fullWidth variant='contained' startIcon={<SaveIcon />}
                                                     sx={{ mt: 1 }}
+                                                    disabled={offline}
                                                     onClick={async () => {
                                                         const err = await updateCategory(sidebarEditName, sidebarEditAmount);
                                                         if (!err) setSidebarEditMode(false);
@@ -494,13 +497,13 @@ export default function BudgetPage() {
                 }}>
                     <EditIcon sx={{ mr: 1 }} />Edit Category
                 </MenuItem>
-                <MenuItem onClick={() => { setSidebarAnchorEl(null); balanceCategory(); }}>
+                <MenuItem onClick={() => { setSidebarAnchorEl(null); balanceCategory(); }} disabled={offline}>
                     <BalanceIcon sx={{ mr: 1 }} />Balance Category
                 </MenuItem>
-                <MenuItem onClick={() => { setSidebarAnchorEl(null); allocateRestOfBudget(); }}>
+                <MenuItem onClick={() => { setSidebarAnchorEl(null); allocateRestOfBudget(); }} disabled={offline}>
                     <AccountBalanceWalletIcon sx={{ mr: 1 }} />Allocate Rest of Budget
                 </MenuItem>
-                <MenuItem onClick={() => { setSidebarAnchorEl(null); setPendingDelete(true); promptDeleteCategory(); }}>
+                <MenuItem onClick={() => { setSidebarAnchorEl(null); setPendingDelete(true); promptDeleteCategory(); }} disabled={offline}>
                     <DeleteIcon sx={{ mr: 1 }} />Delete Category
                 </MenuItem>
             </Menu>
@@ -514,7 +517,7 @@ export default function BudgetPage() {
                 open={moreOpen}
                 onClose={closeOptions}
             >
-                <MenuItem onClick={copyBudgetClick}>
+                <MenuItem onClick={copyBudgetClick} disabled={offline}>
                     <CopyAllIcon sx={{ mr: 1 }} />
                     Copy budget outline
                 </MenuItem>

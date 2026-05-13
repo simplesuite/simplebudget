@@ -35,6 +35,7 @@ import MenuItem from "@mui/material/MenuItem";
 import DeleteIcon from "@mui/icons-material/Delete";
 import Menu from "@mui/material/Menu";
 import { styled, lighten, darken } from '@mui/system';
+import OfflineAlert, { useIsOffline } from "../extras/OfflineAlert";
 
 const GroupHeader = styled('div')(({ theme }) => ({
     position: 'sticky',
@@ -58,6 +59,7 @@ const formatter = new Intl.NumberFormat('en-US', {
 
 export default function EditTransaction() {
     const setLoadingOpen = useGlobalStore(s => s.setMainLoading)
+    const offline = useIsOffline();
     const openEditTransaction = useModalStore(s => s.editTransaction);
     const setOpenEditTransaction = useModalStore(s => s.setEditTransaction);
     const currentTransactionID = useModalStore(s => s.currentTransaction)
@@ -267,6 +269,7 @@ export default function EditTransaction() {
                     </DialogTitle>
                     <DialogContent dividers>
                         <Grid container spacing={2}>
+                            <OfflineAlert />
                             <Grid size={12}>
                                 <ToggleButtonGroup
                                     color="success"
@@ -358,7 +361,7 @@ export default function EditTransaction() {
                     </DialogContent>
                     <Box sx={{ mx: 1, mt: 0.5 }}><Typography color='error'>{errorText}</Typography></Box>
                     <DialogActions>
-                        <Button fullWidth startIcon={<SaveIcon />} variant='contained' type='submit'>Save Changes</Button>
+                        <Button fullWidth startIcon={<SaveIcon />} variant='contained' type='submit' disabled={offline}>Save Changes</Button>
                     </DialogActions>
                 </Box>
             </Dialog>
@@ -373,7 +376,7 @@ export default function EditTransaction() {
                 open={moreOpen}
                 onClose={handleClose}
             >
-                <MenuItem onClick={handleDoubleCheck}>
+                <MenuItem onClick={handleDoubleCheck} disabled={offline}>
                     <DeleteIcon />
                     Delete
                 </MenuItem>
