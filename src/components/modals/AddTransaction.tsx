@@ -21,8 +21,6 @@ import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import ToggleButton from "@mui/material/ToggleButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import AddIcon from "@mui/icons-material/Add";
-import { supabase } from "../../lib/supabase";
-import { ensureSession } from "../extras/ensureSession";
 import { insertTransactionWithOfflineSupport } from "../../lib/offlineSync";
 import CloseIcon from '@mui/icons-material/Close';
 import IconButton from "@mui/material/IconButton";
@@ -137,18 +135,7 @@ export default function AddTransaction() {
             return
         }
         setLoadingOpen(true)
-        // Refresh session in case the user has been idle (iOS kills timers)
-        // Skip when offline — we'll queue the transaction instead
-        if (navigator.onLine) {
-            try {
-                await Promise.race([
-                    ensureSession(),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
-                ]);
-            } catch (e) {
-                // Session refresh failed/timed out — continue anyway, offline queue will handle it
-            }
-        }
+        // Session refresh happens in the background sync — no need to block here
         if (splitBool) {
             const splitTotal = splitArr.reduce((acc, obj) => acc + Number(obj.transAmount), 0);
             if (Math.abs(Number(transactionAmount) - splitTotal) > 0.01) {
@@ -178,7 +165,6 @@ export default function AddTransaction() {
             })
 
             try {
-                let anyQueued = false;
                 for (const x of addTransactions) {
                     const result = await insertTransactionWithOfflineSupport(x);
                     if (!result.success) {
@@ -186,13 +172,12 @@ export default function AddTransaction() {
                         setLoadingOpen(false)
                         return
                     }
-                    if (result.queued) anyQueued = true;
                     setTransactionsArray((prevState: any[]) => [...prevState, x]);
                 }
                 setAddNewTransaction(false)
                 setLoadingOpen(false)
                 setSnackSev('success')
-                setSnackText(anyQueued ? 'Transactions saved offline — will sync when online!' : 'Transactions Added!')
+                setSnackText(navigator.onLine ? 'Transactions Added!' : 'Transactions saved offline — will sync when online!')
                 setSnackOpen(true)
             } catch (err: any) {
                 setErrorText(err.message || 'Failed to save split transactions')
@@ -224,7 +209,7 @@ export default function AddTransaction() {
         setAddNewTransaction(false)
         setLoadingOpen(false)
         setSnackSev('success')
-        setSnackText(result.queued ? 'Transaction saved offline — will sync when online!' : 'Transaction Added!')
+        setSnackText(navigator.onLine ? 'Transaction Added!' : 'Transaction saved offline — will sync when online!')
         setSnackOpen(true)
     }
     function addSplit() {

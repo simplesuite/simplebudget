@@ -82,60 +82,48 @@ export async function syncPendingTransactions(): Promise<{ synced: number; faile
 }
 
 /**
- * Try to insert a transaction. If offline or the request fails due to network,
- * queue it for later sync. Returns true if saved (either online or queued).
+ * Try to insert a transaction. Always queues first for instant UI response,
+ * then attempts to sync in the background. If the sync succeeds, the item
+ * is removed from the queue. If it fails, it stays queued for later.
  */
 export async function insertTransactionWithOfflineSupport(
     transaction: Omit<PendingTransaction, '_queuedAt'>
 ): Promise<{ success: boolean; queued: boolean; error?: string }> {
-    // If offline, queue immediately
+    // Always enqueue first — guarantees the transaction is persisted locally
+    await enqueue({ ...transaction, _queuedAt: Date.now() });
+    const count = await pendingCount();
+    useOfflineStore.getState().setPendingCount(count);
+
+    // If clearly offline, don't even try the network
     if (!navigator.onLine) {
-        await enqueue({ ...transaction, _queuedAt: Date.now() });
-        const count = await pendingCount();
-        useOfflineStore.getState().setPendingCount(count);
         return { success: true, queued: true };
     }
 
-    // Try the insert with a timeout so it doesn't hang forever
+    // Fire-and-forget background sync attempt for this transaction
+    syncSingleTransaction(transaction);
+
+    // Return immediately — the UI doesn't wait for the network
+    return { success: true, queued: true };
+}
+
+/** Background attempt to sync a single transaction, removing it from the queue on success */
+async function syncSingleTransaction(transaction: Omit<PendingTransaction, '_queuedAt'>): Promise<void> {
     try {
         const result = await withTimeout(
             Promise.resolve(supabase.from('transactions').insert(transaction)),
             NETWORK_TIMEOUT
         ) as { error: any };
 
-        if (result.error) {
-            // If it looks like a network error, queue it
-            if (isNetworkError(result.error)) {
-                await enqueue({ ...transaction, _queuedAt: Date.now() });
-                const count = await pendingCount();
-                useOfflineStore.getState().setPendingCount(count);
-                return { success: true, queued: true };
-            }
-            return { success: false, queued: false, error: result.error.message };
+        if (!result.error || result.error.code === '23505') {
+            // Success or duplicate — remove from queue
+            await dequeue(transaction.recordID);
+            const count = await pendingCount();
+            useOfflineStore.getState().setPendingCount(count);
         }
-
-        return { success: true, queued: false };
-    } catch (err: any) {
-        // Network-level failure or timeout — queue for later
-        await enqueue({ ...transaction, _queuedAt: Date.now() });
-        const count = await pendingCount();
-        useOfflineStore.getState().setPendingCount(count);
-        return { success: true, queued: true };
+        // If it's some other error, leave it in the queue for the next full sync
+    } catch {
+        // Timeout or network failure — leave in queue, will sync later
     }
-}
-
-/** Heuristic to detect network-related Supabase errors */
-function isNetworkError(error: any): boolean {
-    const msg = (error?.message || '').toLowerCase();
-    return (
-        msg.includes('fetch') ||
-        msg.includes('network') ||
-        msg.includes('failed to fetch') ||
-        msg.includes('load failed') ||
-        msg.includes('networkerror') ||
-        msg.includes('timeout') ||
-        error?.code === 'NETWORK_ERROR'
-    );
 }
 
 /** Initialize online/offline listeners and kick off initial sync */

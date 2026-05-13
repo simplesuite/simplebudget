@@ -97,6 +97,7 @@ export default function App() {
   const [addToHomePU, setAddToHomePU] = React.useState(false)
   const isOnline = useOfflineStore(s => s.isOnline)
   const offlinePendingCount = useOfflineStore(s => s.pendingCount)
+  const isSyncing = useOfflineStore(s => s.isSyncing)
 
   // Initialize offline sync listeners
   React.useEffect(() => {
@@ -308,7 +309,7 @@ export default function App() {
         />
         {/* Offline indicator */}
         <Snackbar
-          open={!isOnline || offlinePendingCount > 0}
+          open={!isOnline || (offlinePendingCount > 0 && isSyncing)}
           anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
           sx={{ mt: 7 }}
         >
@@ -317,9 +318,11 @@ export default function App() {
             icon={<CloudOffIcon />}
             sx={{ width: '100%' }}
           >
-            {!isOnline
-              ? `You're offline. ${offlinePendingCount > 0 ? `${offlinePendingCount} transaction(s) will sync when reconnected.` : 'Transactions will be saved locally.'}`
-              : `Syncing ${offlinePendingCount} offline transaction(s)...`}
+            {!isOnline && offlinePendingCount > 0
+              ? `You're offline. ${offlinePendingCount} transaction(s) pending sync.`
+              : !isOnline
+                ? `You're offline.`
+                : `Syncing ${offlinePendingCount} transaction(s)...`}
           </Alert>
         </Snackbar>
       </ThemeProvider>
