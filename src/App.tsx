@@ -141,12 +141,13 @@ export default function App() {
 
   async function grabAllBudgets() {
     let myBudgets = await supaBudgetsByCreator(currentUserInfo.recordID)
+    if (!myBudgets) myBudgets = [];
     let foundBudgets = myBudgets
     let sharedBudgetIDs = await supaShared(currentUserInfo.recordID)
     if (sharedBudgetIDs && sharedBudgetIDs.length > 0) {
       let sharedBudgets = await supaBudgetsByID(sharedBudgetIDs.map(x => x.budgetID))
       //@ts-ignore
-      foundBudgets = myBudgets.concat(sharedBudgets.data)
+      foundBudgets = myBudgets.concat(sharedBudgets.data || [])
     }
     // Cache budgets for offline use
     try {
@@ -216,7 +217,7 @@ export default function App() {
         new Promise<null>((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000))
       ]);
       // If we got null/undefined back, Supabase had a network error — fall back to cache
-      if (!allBudgets) {
+      if (allBudgets === null || allBudgets === undefined) {
         loadFromCache();
         return
       }
