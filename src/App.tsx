@@ -104,6 +104,15 @@ export default function App() {
     return cleanup;
   }, []);
 
+  // Re-fetch budget data when coming back online
+  React.useEffect(() => {
+    const handleOnline = () => {
+      supaRefresh();
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, []);
+
   const addToHomeClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
     if (reason === 'clickaway') { return }
     setAddToHomePU(false);
@@ -143,6 +152,10 @@ export default function App() {
       //@ts-ignore
       foundBudgets = myBudgets.concat(sharedBudgets.data)
     }
+    // Cache budgets for offline use
+    try {
+      localStorage.setItem('cachedBudgets', JSON.stringify(foundBudgets));
+    } catch (e) { /* ignore */ }
     return foundBudgets
   }
 
@@ -195,10 +208,40 @@ export default function App() {
   }
 
   async function supaRefresh() {
+    // If offline, load from cache and skip network calls
+    if (!navigator.onLine) {
+      try {
+        const cachedBudgets = JSON.parse(localStorage.getItem('cachedBudgets') || '[]');
+        if (cachedBudgets.length > 0) {
+          setBudgetArray(cachedBudgets);
+        }
+        // GrabBudgetData will also load from cache internally
+        const resolvedBudget = currentBudget;
+        if (resolvedBudget.budgetID) {
+          await grabBudgetData(resolvedBudget.budgetID, resolvedBudget.year, resolvedBudget.month);
+        }
+      } catch (e) {
+        console.warn('Failed to load cached data:', e);
+      }
+      setLoadingOpen(false)
+      return
+    }
     setLoadingOpen(true)
-    let allBudgets = await grabAllBudgets()
-    let curBudget = await setBudget(allBudgets)
-    setLoadingOpen(false)
+    try {
+      let allBudgets = await grabAllBudgets()
+      await setBudget(allBudgets)
+    } catch (err) {
+      console.error('supaRefresh failed (possibly offline):', err)
+      // Fallback: try loading from cache
+      try {
+        const cachedBudgets = JSON.parse(localStorage.getItem('cachedBudgets') || '[]');
+        if (cachedBudgets.length > 0) {
+          setBudgetArray(cachedBudgets);
+        }
+      } catch (e) { /* ignore */ }
+    } finally {
+      setLoadingOpen(false)
+    }
   }
   return (
     <>

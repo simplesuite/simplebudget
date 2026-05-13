@@ -138,7 +138,10 @@ export default function AddTransaction() {
         }
         setLoadingOpen(true)
         // Refresh session in case the user has been idle (iOS kills timers)
-        await ensureSession();
+        // Skip when offline — we'll queue the transaction instead
+        if (navigator.onLine) {
+            await ensureSession();
+        }
         if (splitBool) {
             const splitTotal = splitArr.reduce((acc, obj) => acc + Number(obj.transAmount), 0);
             if (Math.abs(Number(transactionAmount) - splitTotal) > 0.01) {
