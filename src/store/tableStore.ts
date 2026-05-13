@@ -16,6 +16,15 @@ if (localStorage.getItem('currentBudget')) {
     }
 }
 
+// Load cached data from localStorage for offline-first startup
+function loadCached(key: string): any[] {
+    try {
+        const raw = localStorage.getItem(key);
+        if (raw) return JSON.parse(raw);
+    } catch (e) { /* ignore */ }
+    return [];
+}
+
 interface TableState {
     shared: any;
     setShared: (val: any) => void;
@@ -34,21 +43,21 @@ interface TableState {
 export const useTableStore = create<TableState>((set) => ({
     shared: null,
     setShared: (val) => set({ shared: val }),
-    budgets: [],
+    budgets: loadCached('cachedBudgets'),
     setBudgets: (val) => set((state) => ({
         budgets: typeof val === 'function' ? val(state.budgets) : val,
     })),
     currentBudgetAndMonth: currentBudget,
     setCurrentBudgetAndMonth: (val) => set({ currentBudgetAndMonth: val }),
-    transactions: [],
+    transactions: loadCached('cachedTransactions'),
     setTransactions: (val) => set((state) => ({
         transactions: typeof val === 'function' ? val(state.transactions) : val,
     })),
-    categories: [],
+    categories: loadCached('cachedCategories'),
     setCategories: (val) => set((state) => ({
         categories: typeof val === 'function' ? val(state.categories) : val,
     })),
-    sections: [],
+    sections: loadCached('cachedSections'),
     setSections: (val) => set((state) => ({
         sections: typeof val === 'function' ? val(state.sections) : val,
     })),
