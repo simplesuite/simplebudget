@@ -10,6 +10,20 @@ import { ensureSession } from '../components/extras/ensureSession';
 
 let syncInProgress = false;
 
+/** How long to wait for a network request before assuming we're offline (ms) */
+const NETWORK_TIMEOUT = 8000;
+
+/** Race a promise against a timeout. Rejects with a timeout error if too slow. */
+function withTimeout<T>(promise: Promise<T> | PromiseLike<T>, ms: number): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('Network timeout')), ms);
+        Promise.resolve(promise).then(
+            (val) => { clearTimeout(timer); resolve(val); },
+            (err) => { clearTimeout(timer); reject(err); },
+        );
+    });
+}
+
 /** Attempt to sync all pending transactions to Supabase */
 export async function syncPendingTransactions(): Promise<{ synced: number; failed: number }> {
     if (syncInProgress) return { synced: 0, failed: 0 };
@@ -22,29 +36,36 @@ export async function syncPendingTransactions(): Promise<{ synced: number; faile
     let failed = 0;
 
     try {
-        await ensureSession();
+        await withTimeout(ensureSession(), NETWORK_TIMEOUT);
         const pending = await getAll();
 
         for (const transaction of pending) {
             // Strip the queue metadata before inserting
             const { _queuedAt, ...payload } = transaction;
 
-            const { error } = await supabase
-                .from('transactions')
-                .insert(payload);
+            try {
+                const result = await withTimeout(
+                    Promise.resolve(supabase.from('transactions').insert(payload)),
+                    NETWORK_TIMEOUT
+                ) as { error: any };
 
-            if (error) {
-                // If it's a duplicate key error, the transaction already exists — remove from queue
-                if (error.code === '23505') {
+                if (result.error) {
+                    // If it's a duplicate key error, the transaction already exists — remove from queue
+                    if (result.error.code === '23505') {
+                        await dequeue(transaction.recordID);
+                        synced++;
+                    } else {
+                        failed++;
+                        console.error('Offline sync failed for', transaction.recordID, result.error.message);
+                    }
+                } else {
                     await dequeue(transaction.recordID);
                     synced++;
-                } else {
-                    failed++;
-                    console.error('Offline sync failed for', transaction.recordID, error.message);
                 }
-            } else {
-                await dequeue(transaction.recordID);
-                synced++;
+            } catch (err) {
+                // Timeout or network error — stop trying, we're probably offline
+                failed++;
+                break;
             }
         }
     } catch (err) {
@@ -75,26 +96,27 @@ export async function insertTransactionWithOfflineSupport(
         return { success: true, queued: true };
     }
 
-    // Try the insert
+    // Try the insert with a timeout so it doesn't hang forever
     try {
-        const { error } = await supabase
-            .from('transactions')
-            .insert(transaction);
+        const result = await withTimeout(
+            Promise.resolve(supabase.from('transactions').insert(transaction)),
+            NETWORK_TIMEOUT
+        ) as { error: any };
 
-        if (error) {
+        if (result.error) {
             // If it looks like a network error, queue it
-            if (isNetworkError(error)) {
+            if (isNetworkError(result.error)) {
                 await enqueue({ ...transaction, _queuedAt: Date.now() });
                 const count = await pendingCount();
                 useOfflineStore.getState().setPendingCount(count);
                 return { success: true, queued: true };
             }
-            return { success: false, queued: false, error: error.message };
+            return { success: false, queued: false, error: result.error.message };
         }
 
         return { success: true, queued: false };
     } catch (err: any) {
-        // Network-level failure (fetch failed, timeout, etc.)
+        // Network-level failure or timeout — queue for later
         await enqueue({ ...transaction, _queuedAt: Date.now() });
         const count = await pendingCount();
         useOfflineStore.getState().setPendingCount(count);
@@ -111,6 +133,7 @@ function isNetworkError(error: any): boolean {
         msg.includes('failed to fetch') ||
         msg.includes('load failed') ||
         msg.includes('networkerror') ||
+        msg.includes('timeout') ||
         error?.code === 'NETWORK_ERROR'
     );
 }

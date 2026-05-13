@@ -140,7 +140,14 @@ export default function AddTransaction() {
         // Refresh session in case the user has been idle (iOS kills timers)
         // Skip when offline — we'll queue the transaction instead
         if (navigator.onLine) {
-            await ensureSession();
+            try {
+                await Promise.race([
+                    ensureSession(),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+                ]);
+            } catch (e) {
+                // Session refresh failed/timed out — continue anyway, offline queue will handle it
+            }
         }
         if (splitBool) {
             const splitTotal = splitArr.reduce((acc, obj) => acc + Number(obj.transAmount), 0);
