@@ -43,8 +43,6 @@ export async function verifyConnectivity(): Promise<boolean> {
     }
 
     try {
-        // Use a lightweight Supabase query (count of 0 rows) as a connectivity check.
-        // This hits the actual API endpoint so it detects lie-fi scenarios.
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 5000);
 
@@ -60,12 +58,11 @@ export async function verifyConnectivity(): Promise<boolean> {
         );
         clearTimeout(timeout);
 
-        const online = response.ok || response.status === 400; // 400 means server responded
-        useOfflineStore.getState().setIsOnline(online);
-        if (online) {
-            useOfflineStore.getState().setLastVerifiedAt(Date.now());
-        }
-        return online;
+        // Any HTTP response (even 4xx/5xx) means the server is reachable.
+        // Only a network failure / timeout means we're truly offline.
+        useOfflineStore.getState().setIsOnline(true);
+        useOfflineStore.getState().setLastVerifiedAt(Date.now());
+        return true;
     } catch {
         // Network error, timeout, or abort — we're effectively offline
         useOfflineStore.getState().setIsOnline(false);
@@ -147,9 +144,10 @@ export async function syncPendingTransactions(): Promise<{ synced: number; faile
         // Update pending count
         const count = await pendingCount();
         useOfflineStore.getState().setPendingCount(count);
-        // If we still have pending items after sync attempt, we're effectively offline
-        // (navigator.onLine lied to us)
-        if (count > 0 && failed > 0) {
+        // If ALL items failed (not just some), we're likely offline.
+        // Don't mark offline if some succeeded — that means the network is working
+        // but individual items had errors.
+        if (count > 0 && failed > 0 && synced === 0) {
             useOfflineStore.getState().setIsOnline(false);
         }
     }
@@ -198,8 +196,8 @@ async function syncSingleTransaction(transaction: Omit<PendingTransaction, '_que
         }
         // If it's some other error, leave it in the queue for the next full sync
     } catch {
-        // Timeout or network failure — we're effectively offline
-        useOfflineStore.getState().setIsOnline(false);
+        // Timeout or network failure — verify connectivity before marking offline
+        verifyConnectivity();
     }
 }
 

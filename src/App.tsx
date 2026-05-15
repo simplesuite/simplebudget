@@ -49,7 +49,6 @@ import EditTransaction from "./components/modals/EditTransaction";
 import UpdatePrompt from "./components/subcomponents/UpdatePrompt";
 import { usePwaStore } from "./store/pwaStore";
 import { initOfflineSync } from "./lib/offlineSync";
-import { OfflineBanner } from "./components/extras/OfflineAlert";
 
 const fabStyle = {
   position: 'fixed',
@@ -141,6 +140,7 @@ export default function App() {
   };
 
   async function grabAllBudgets() {
+    if (!currentUserInfo.recordID) return []
     let myBudgets = await supaBudgetsByCreator(currentUserInfo.recordID)
     if (!myBudgets) myBudgets = [];
     let foundBudgets = myBudgets
@@ -160,6 +160,10 @@ export default function App() {
   async function setBudget(allBudgets: any[] | null) {
     if (allBudgets) {
       if (allBudgets.length > 0) {
+        // Close New Budget modal if it was erroneously opened (e.g. race condition)
+        if (useModalStore.getState().addBudget) {
+          setCreateNewBudget(false)
+        }
         await setBudgetArray(allBudgets)
         let resolvedBudget = {
           budgetID: currentBudget.budgetID,
@@ -185,14 +189,21 @@ export default function App() {
                 month: currentBudget.month,
               }
               setCurrentBudget(resolvedBudget)
+            } else {
+              // Stored budget no longer exists, let user pick
+              setSelectBudget(true)
+              return
             }
           } //if there's nothing in localstorage, open the selector for the user to choose
           else {
             setSelectBudget(true)
+            return
           }
         }
         await grabBudgetData(resolvedBudget.budgetID, resolvedBudget.year, resolvedBudget.month)
       } else if (allBudgets.length === 0) {
+        // Only show New Budget if we have a valid user ID (not a stale/empty session query)
+        if (!currentUserInfo.recordID) return
         setBudgetArray([])
         setSectionArray([])
         setCategoryArray([])
@@ -252,7 +263,6 @@ export default function App() {
     <>
       <ThemeProvider theme={actTheme}>
         <CssBaseline />
-        <OfflineBanner />
         <Box sx={{
           display: 'flex',
           minHeight: window.innerHeight,
