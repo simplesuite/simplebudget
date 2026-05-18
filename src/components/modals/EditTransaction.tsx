@@ -35,6 +35,8 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import MenuItem from "@mui/material/MenuItem";
 import DeleteIcon from "@mui/icons-material/Delete";
 import Menu from "@mui/material/Menu";
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import { styled, lighten, darken } from '@mui/system';
 import OfflineAlert, { useIsOffline } from "../extras/OfflineAlert";
 
@@ -281,7 +283,7 @@ export default function EditTransaction() {
                             <OfflineAlert />
                             <Grid size={12}>
                                 <ToggleButtonGroup
-                                    color="success"
+                                    color={transactionType === 'income' ? 'success' : 'warning'}
                                     value={transactionType}
                                     fullWidth
                                     onFocus={handleFocus}
@@ -289,8 +291,8 @@ export default function EditTransaction() {
                                     onChange={handleTypeChange}
                                     size='small'
                                 >
-                                    <ToggleButton value="income">Income</ToggleButton>
-                                    <ToggleButton value="expense">Expense</ToggleButton>
+                                    <ToggleButton value="income"><TrendingUpIcon sx={{ mr: 0.5 }} />Income</ToggleButton>
+                                    <ToggleButton value="expense"><TrendingDownIcon sx={{ mr: 0.5 }} />Expense</ToggleButton>
                                 </ToggleButtonGroup>
                             </Grid>
                             <Grid size={{ xs: 6, md: 12 }}>

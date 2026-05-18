@@ -29,6 +29,8 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import ToggleButton from "@mui/material/ToggleButton";
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import OfflineAlert, { useIsOffline } from "../extras/OfflineAlert";
 
 export default function EditSection() {
@@ -234,14 +236,14 @@ export default function EditSection() {
                             <OfflineAlert />
                             <Grid size={12}>
                                 <ToggleButtonGroup
-                                    color="success"
+                                    color={sectionType === 'income' ? 'success' : 'warning'}
                                     value={sectionType}
                                     fullWidth
                                     exclusive
                                     onChange={handleTypeChange}
                                 >
-                                    <ToggleButton value="income">Income</ToggleButton>
-                                    <ToggleButton value="expense">Expense</ToggleButton>
+                                    <ToggleButton value="income"><TrendingUpIcon sx={{ mr: 0.5 }} />Income</ToggleButton>
+                                    <ToggleButton value="expense"><TrendingDownIcon sx={{ mr: 0.5 }} />Expense</ToggleButton>
                                 </ToggleButtonGroup>
                             </Grid>
                             <Grid size={12}>

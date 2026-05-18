@@ -140,12 +140,19 @@ export default function useCategoryActions() {
         }
     }
 
-    async function updateCategory(name: string, amount: number): Promise<string | null> {
+    async function updateCategory(name: string, amount: number, categoryNote?: string): Promise<string | null> {
         setLoadingOpen(true);
         try {
             await withNetworkTimeout(ensureSession());
+            const updatePayload: any = {
+                categoryName: name,
+                amount: amount === null || (amount as any) === '' ? 0 : amount,
+            };
+            if (categoryNote !== undefined) {
+                updatePayload.categoryNote = categoryNote;
+            }
             const { error } = await withNetworkTimeout(
-                Promise.resolve(supabase.from('categories').update({ categoryName: name, amount: amount === null || (amount as any) === '' ? 0 : amount }).eq('recordID', currentCategoryID))
+                Promise.resolve(supabase.from('categories').update(updatePayload).eq('recordID', currentCategoryID))
             ) as { error: any };
             if (error) {
                 setLoadingOpen(false);
@@ -153,7 +160,7 @@ export default function useCategoryActions() {
             }
             setCategoryArray(categoryArray.map(obj =>
                 obj.recordID === currentCategoryID
-                    ? { ...obj, categoryName: name, amount: Number(amount) }
+                    ? { ...obj, categoryName: name, amount: Number(amount), ...(categoryNote !== undefined && { categoryNote }) }
                     : obj
             ));
             setLoadingOpen(false);

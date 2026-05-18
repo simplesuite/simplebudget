@@ -63,7 +63,8 @@ export default function AddCategory() {
                     sectionID: currentSectionID,
                     categoryName: categoryName,
                     //@ts-ignore
-                    amount: categoryAmount === '' ? 0 : Number(categoryAmount)
+                    amount: categoryAmount === '' ? 0 : Number(categoryAmount),
+                    categoryNote: '',
                 };
                 let { error } = await withNetworkTimeout(
                     Promise.resolve(supabase.from('categories').insert(newCategory))

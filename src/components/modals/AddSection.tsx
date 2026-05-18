@@ -23,6 +23,8 @@ import Button from "@mui/material/Button";
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import OfflineAlert, { useIsOffline } from "../extras/OfflineAlert";
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 
 export default function AddSection() {
     const setLoadingOpen = useGlobalStore(s => s.setMainLoading)
@@ -117,14 +119,14 @@ export default function AddSection() {
                             <OfflineAlert />
                             <Grid size={12}>
                                 <ToggleButtonGroup
-                                    color="success"
+                                    color={sectionType === 'income' ? 'success' : 'warning'}
                                     value={sectionType}
                                     fullWidth
                                     exclusive
                                     onChange={handleTypeChange}
                                 >
-                                    <ToggleButton value="income">Income</ToggleButton>
-                                    <ToggleButton value="expense">Expense</ToggleButton>
+                                    <ToggleButton value="income"><TrendingUpIcon sx={{ mr: 0.5 }} /> Income</ToggleButton>
+                                    <ToggleButton value="expense"><TrendingDownIcon sx={{ mr: 0.5 }} /> Expense</ToggleButton>
                                 </ToggleButtonGroup>
                             </Grid>
                             <Grid size={12}>

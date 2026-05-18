@@ -27,8 +27,11 @@ import IconButton from "@mui/material/IconButton";
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { styled, lighten, darken } from '@mui/system';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import Alert from '@mui/material/Alert';
+import AltRouteIcon from '@mui/icons-material/AltRoute';
+import ReadMoreOutlinedIcon from '@mui/icons-material/ReadMoreOutlined';
 
 const GroupHeader = styled('div')(({ theme }) => ({
     position: 'sticky',
@@ -300,6 +303,7 @@ export default function AddTransaction() {
                             onChange={() => {
                                 setSplitBool(!splitBool);
                             }}>
+                            <AltRouteIcon />
                             Split
                         </ToggleButton>
                         <IconButton onClick={() => setAddNewTransaction(false)}><CloseIcon /></IconButton>
@@ -322,15 +326,15 @@ export default function AddTransaction() {
                                 :
                                 <Grid size={12}>
                                     <ToggleButtonGroup
-                                        color="success"
+                                        color={transactionType === 'income' ? 'success' : 'warning'}
                                         value={transactionType}
                                         fullWidth
                                         exclusive
                                         onChange={handleTypeChange}
                                         size='small'
                                     >
-                                        <ToggleButton value="income">Income</ToggleButton>
-                                        <ToggleButton value="expense">Expense</ToggleButton>
+                                        <ToggleButton value="income"><TrendingUpIcon sx={{ mr: 0.5 }} />Income</ToggleButton>
+                                        <ToggleButton value="expense"><TrendingDownIcon sx={{ mr: 0.5 }} />Expense</ToggleButton>
                                     </ToggleButtonGroup>
                                 </Grid>
                             }
@@ -467,7 +471,7 @@ export default function AddTransaction() {
                                                 />
                                             </Grid>
                                             <Grid size={1}>
-                                                <IconButton size='small' title='Allocate rest' onClick={() => allocateRest(x.recId)}><AttachMoneyIcon /></IconButton>
+                                                <IconButton size='small' title='Allocate rest' onClick={() => allocateRest(x.recId)}><ReadMoreOutlinedIcon /></IconButton>
                                             </Grid>
                                             <Grid size={1}>
                                                 <IconButton size='small' onClick={() => deleteSplitCat(x.recId)}><CloseIcon /></IconButton>
