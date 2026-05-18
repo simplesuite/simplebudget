@@ -1,3 +1,7 @@
+<p align="center">
+<img width="250" height="250" alt="logo" src="https://github.com/user-attachments/assets/57426cb2-3e99-45ba-918c-8d79126c6571" />
+</p>
+
 # simpleBudget
 
 [![Made with Supabase](https://supabase.com/badge-made-with-supabase.svg)](https://supabase.com)
