@@ -5,7 +5,7 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import Paper from '@mui/material/Paper';
 import { Switch } from "@mui/material";
-import { useGlobalStore } from "../store/globalStore";
+import { useGlobalStore, dialogPaperStyles } from "../store/globalStore";
 import { useTableStore } from "../store/tableStore";
 import { useModalStore } from "../store/modalStore";
 import { supaALLsections, supaCategories } from './extras/api_functions'
@@ -33,12 +33,18 @@ import DialogTitle from '@mui/material/DialogTitle';
 import { QRCodeSVG } from 'qrcode.react';
 import ChangePassword from './modals/ChangePassword'
 import ExportToCSV from './modals/ExportToCSV'
+import { useTheme } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import { useIsOffline } from "./extras/OfflineAlert";
+import CloseIcon from '@mui/icons-material/Close';
+import IconButton from "@mui/material/IconButton";
 
 export default function SettingsPage() {
     const setLoadingOpen = useGlobalStore(s => s.setMainLoading)
     const setExportToCSV = useModalStore(s => s.setExportToCSV)
     const offline = useIsOffline();
+    const theme = useTheme();
+    const bigger = useMediaQuery(theme.breakpoints.up('sm'));
     const sectionsArray = useTableStore(s => s.sections);
     const [slideCheck, setSlideCheck] = React.useState(false);
     const areYouSureOpen = useModalStore(s => s.areYouSure);
@@ -293,22 +299,31 @@ export default function SettingsPage() {
             <ShareBudget />
             <ChangePassword />
             <ExportToCSV />
-            <Dialog open={qrOpen} onClose={() => setQrOpen(false)}>
-                <DialogTitle>My User ID</DialogTitle>
-                <DialogContent sx={{ textAlign: 'center', pb: 3 }}>
-                    <QRCodeSVG value={currentUserDetails.recordID} size={200} />
-                    <Typography variant='body2' color='text.secondary' sx={{ mt: 2, wordBreak: 'break-all' }}>
-                        {currentUserDetails.recordID}
-                    </Typography>
-                    <Button
-                        sx={{ mt: 1 }}
-                        size='small'
-                        startIcon={<ContentCopyIcon />}
-                        onClick={() => { copyUserID(); setQrOpen(false); }}
-                    >
-                        Copy ID
-                    </Button>
-                </DialogContent>
+            <Dialog
+                open={qrOpen}
+                onClose={() => setQrOpen(false)}
+                fullScreen={!bigger}
+                slotProps={{ paper: bigger ? dialogPaperStyles : undefined }}
+            >
+                <Box sx={{ bgcolor: 'background.paper', height: '100%' }}>
+                    <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        My User ID<IconButton onClick={() => setQrOpen(false)}><CloseIcon /></IconButton>
+                    </DialogTitle>
+                    <DialogContent sx={{ textAlign: 'center', pb: 3 }} dividers>
+                        <QRCodeSVG value={currentUserDetails.recordID} size={200} />
+                        <Typography variant='body2' color='text.secondary' sx={{ mt: 2, wordBreak: 'break-all' }}>
+                            {currentUserDetails.recordID}
+                        </Typography>
+                        <Button
+                            sx={{ mt: 1 }}
+                            size='small'
+                            startIcon={<ContentCopyIcon />}
+                            onClick={() => { copyUserID(); setQrOpen(false); }}
+                        >
+                            Copy ID
+                        </Button>
+                    </DialogContent>
+                </Box>
             </Dialog>
         </>
     )
