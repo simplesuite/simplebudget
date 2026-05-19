@@ -404,7 +404,7 @@ export default function BudgetPage() {
                                                 <TextField size='small' variant='filled' fullWidth type="number"
                                                     value={sidebarEditAmount}
                                                     onChange={(e) => setSidebarEditAmount(Number(e.target.value))}
-                                                    label="Budget Amount"
+                                                    label="Amount"
                                                     slotProps={{
                                                         input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
                                                         htmlInput: { step: 'any' },
@@ -429,7 +429,7 @@ export default function BudgetPage() {
                                 </Box>
                                 <Box display='flex' justifyContent='space-between' sx={{ mt: 0.5 }}>
                                     <Typography variant='body2' color='text.secondary'>
-                                        Budgeted: {formatter.format(selectedCategory.amount)}
+                                        Planned: {formatter.format(selectedCategory.amount)}
                                     </Typography>
                                     <Typography variant='body2' color='text.secondary'>
                                         Tracked: {formatter.format(Math.abs(sidebarTracked))}
@@ -439,7 +439,7 @@ export default function BudgetPage() {
                                         sx={{ fontWeight: 'bold' }}
                                         color={sidebarRemaining < 0 ? 'error.main' : 'success.main'}
                                     >
-                                        Left: {formatter.format(sidebarRemaining)}
+                                        Remaining: {formatter.format(sidebarRemaining)}
                                     </Typography>
                                 </Box>
                                 <LinearProgress

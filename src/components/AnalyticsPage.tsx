@@ -2,9 +2,10 @@ import React from 'react';
 import { useTheme } from '@mui/material/styles';
 import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
 import { useTableStore } from '../store/tableStore';
 import Typography from '@mui/material/Typography';
-import Stack from "@mui/material/Stack";
+
 import dayjs from 'dayjs';
 import {
     PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
@@ -90,114 +91,122 @@ export default function AnalyticsPage() {
         percent > 0.05 ? `${name} ${(percent * 100).toFixed(0)}%` : '';
 
     return (
-        <Box display='flex' flexDirection='column' alignItems='center'>
-            <Stack spacing={2} alignItems="stretch" sx={{ maxWidth: 500, width: '100%' }}>
+        <Box display='flex' flexDirection='column' alignItems='center' sx={{ width: '100%' }}>
+            <Grid container spacing={2} sx={{ maxWidth: { xs: 500, md: 1040 }, width: '100%' }}>
 
                 {/* Income Sources Pie */}
                 {incomeData.length > 0 && (
-                    <Paper elevation={4} sx={{ borderRadius: 3, p: 2 }}>
-                        <Typography textAlign='center' color='text.secondary' variant='h6' sx={{ fontWeight: '600', mb: 1 }}>
-                            Income Sources
-                        </Typography>
-                        <ResponsiveContainer width="100%" height={250}>
-                            <PieChart>
-                                <Pie data={incomeData} dataKey="value" nameKey="name" cx="50%" cy="50%"
-                                    outerRadius={90} innerRadius={50} cornerRadius="1%" paddingAngle={2}
-                                    label={renderPieLabel} labelLine={false}>
-                                    {incomeData.map((_, i) => (
-                                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip formatter={(val) => formatter.format(Number(val))} {...tooltipStyle} />
-                            </PieChart>
-                        </ResponsiveContainer>
-                        {incomeData.map((d, i) => (
-                            <Box key={d.name} display='flex' justifyContent='space-between' sx={{ mx: 1, my: 0.5 }}>
-                                <Box display='flex' alignItems='center' gap={1}>
-                                    <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: COLORS[i % COLORS.length] }} />
-                                    <Typography variant='body2' color='text.secondary'>{d.name}</Typography>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <Paper elevation={4} sx={{ borderRadius: 3, p: 2 }}>
+                            <Typography textAlign='center' color='text.secondary' variant='h6' sx={{ fontWeight: '600', mb: 1 }}>
+                                Income Sources
+                            </Typography>
+                            <ResponsiveContainer width="100%" height={250}>
+                                <PieChart>
+                                    <Pie data={incomeData} dataKey="value" nameKey="name" cx="50%" cy="50%"
+                                        outerRadius={90} innerRadius={50} cornerRadius="1%" paddingAngle={2}
+                                        label={renderPieLabel} labelLine={false}>
+                                        {incomeData.map((_, i) => (
+                                            <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip formatter={(val) => formatter.format(Number(val))} {...tooltipStyle} />
+                                </PieChart>
+                            </ResponsiveContainer>
+                            {incomeData.map((d, i) => (
+                                <Box key={d.name} display='flex' justifyContent='space-between' sx={{ mx: 1, my: 0.5 }}>
+                                    <Box display='flex' alignItems='center' gap={1}>
+                                        <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: COLORS[i % COLORS.length] }} />
+                                        <Typography variant='body2' color='text.secondary'>{d.name}</Typography>
+                                    </Box>
+                                    <Typography variant='body2' color='text.secondary' fontWeight='bold'>{formatter.format(d.value)}</Typography>
                                 </Box>
-                                <Typography variant='body2' color='text.secondary' fontWeight='bold'>{formatter.format(d.value)}</Typography>
-                            </Box>
-                        ))}
-                    </Paper>
+                            ))}
+                        </Paper>
+                    </Grid>
                 )}
 
                 {/* Expense Distribution Pie */}
                 {expenseData.length > 0 && (
-                    <Paper elevation={4} sx={{ borderRadius: 3, p: 2 }}>
-                        <Typography textAlign='center' color='text.secondary' variant='h6' sx={{ fontWeight: '600', mb: 1 }}>
-                            Expense Distribution
-                        </Typography>
-                        <ResponsiveContainer width="100%" height={250}>
-                            <PieChart>
-                                <Pie data={expenseData} dataKey="value" nameKey="name" cx="50%" cy="50%"
-                                    outerRadius={90} innerRadius={50} cornerRadius="1%" paddingAngle={2}
-                                    label={renderPieLabel} labelLine={false}>
-                                    {expenseData.map((_, i) => (
-                                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip formatter={(val) => formatter.format(Number(val))} {...tooltipStyle} />
-                            </PieChart>
-                        </ResponsiveContainer>
-                        {expenseData.map((d, i) => (
-                            <Box key={d.name} display='flex' justifyContent='space-between' sx={{ mx: 1, my: 0.5 }}>
-                                <Box display='flex' alignItems='center' gap={1}>
-                                    <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: COLORS[i % COLORS.length] }} />
-                                    <Typography variant='body2' color='text.secondary'>{d.name}</Typography>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <Paper elevation={4} sx={{ borderRadius: 3, p: 2 }}>
+                            <Typography textAlign='center' color='text.secondary' variant='h6' sx={{ fontWeight: '600', mb: 1 }}>
+                                Expense Distribution
+                            </Typography>
+                            <ResponsiveContainer width="100%" height={250}>
+                                <PieChart>
+                                    <Pie data={expenseData} dataKey="value" nameKey="name" cx="50%" cy="50%"
+                                        outerRadius={90} innerRadius={50} cornerRadius="1%" paddingAngle={2}
+                                        label={renderPieLabel} labelLine={false}>
+                                        {expenseData.map((_, i) => (
+                                            <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip formatter={(val) => formatter.format(Number(val))} {...tooltipStyle} />
+                                </PieChart>
+                            </ResponsiveContainer>
+                            {expenseData.map((d, i) => (
+                                <Box key={d.name} display='flex' justifyContent='space-between' sx={{ mx: 1, my: 0.5 }}>
+                                    <Box display='flex' alignItems='center' gap={1}>
+                                        <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: COLORS[i % COLORS.length] }} />
+                                        <Typography variant='body2' color='text.secondary'>{d.name}</Typography>
+                                    </Box>
+                                    <Typography variant='body2' color='text.secondary' fontWeight='bold'>{formatter.format(d.value)}</Typography>
                                 </Box>
-                                <Typography variant='body2' color='text.secondary' fontWeight='bold'>{formatter.format(d.value)}</Typography>
-                            </Box>
-                        ))}
-                    </Paper>
+                            ))}
+                        </Paper>
+                    </Grid>
                 )}
 
                 {/* Budgeted vs Actual Bar Chart */}
                 {barData.length > 0 && (
-                    <Paper elevation={4} sx={{ borderRadius: 3, p: 2 }}>
-                        <Typography textAlign='center' color='text.secondary' variant='h6' sx={{ fontWeight: '600', mb: 1 }}>
-                            Budgeted vs Spent
-                        </Typography>
-                        <ResponsiveContainer width="100%" height={250}>
-                            <BarChart data={barData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
-                                <XAxis dataKey="name" tick={{ fill: textColor, fontSize: 12 }} />
-                                <YAxis tick={{ fill: textColor, fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
-                                <Tooltip formatter={(val) => formatter.format(Number(val))} {...tooltipStyle} />
-                                <Legend />
-                                <Bar dataKey="Budgeted" fill="#4c809e" radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="Spent" fill="#D6A058" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </Paper>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <Paper elevation={4} sx={{ borderRadius: 3, p: 2 }}>
+                            <Typography textAlign='center' color='text.secondary' variant='h6' sx={{ fontWeight: '600', mb: 1 }}>
+                                Budgeted vs Spent
+                            </Typography>
+                            <ResponsiveContainer width="100%" height={250}>
+                                <BarChart data={barData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+                                    <XAxis dataKey="name" tick={{ fill: textColor, fontSize: 12 }} />
+                                    <YAxis tick={{ fill: textColor, fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
+                                    <Tooltip formatter={(val) => formatter.format(Number(val))} {...tooltipStyle} />
+                                    <Legend />
+                                    <Bar dataKey="Budgeted" fill="#4c809e" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="Spent" fill="#D6A058" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </Paper>
+                    </Grid>
                 )}
 
                 {/* Cumulative Spending Over Time */}
                 {spendingByDay.length > 1 && (
-                    <Paper elevation={4} sx={{ borderRadius: 3, p: 2 }}>
-                        <Typography textAlign='center' color='text.secondary' variant='h6' sx={{ fontWeight: '600', mb: 1 }}>
-                            Spending Over Time
-                        </Typography>
-                        <ResponsiveContainer width="100%" height={250}>
-                            <AreaChart data={spendingByDay} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                                <defs>
-                                    <linearGradient id="spendGradient" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#e07b7b" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="#e07b7b" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
-                                <XAxis dataKey="date" tick={{ fill: textColor, fontSize: 12 }} />
-                                <YAxis tick={{ fill: textColor, fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
-                                <Tooltip formatter={(val) => formatter.format(Number(val))} {...tooltipStyle} />
-                                <Area type="monotone" dataKey="amount" stroke="#e07b7b" fill="url(#spendGradient)" strokeWidth={2} name="Total Spent" />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </Paper>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <Paper elevation={4} sx={{ borderRadius: 3, p: 2 }}>
+                            <Typography textAlign='center' color='text.secondary' variant='h6' sx={{ fontWeight: '600', mb: 1 }}>
+                                Spending Over Time
+                            </Typography>
+                            <ResponsiveContainer width="100%" height={250}>
+                                <AreaChart data={spendingByDay} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                                    <defs>
+                                        <linearGradient id="spendGradient" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#e07b7b" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#e07b7b" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+                                    <XAxis dataKey="date" tick={{ fill: textColor, fontSize: 12 }} />
+                                    <YAxis tick={{ fill: textColor, fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
+                                    <Tooltip formatter={(val) => formatter.format(Number(val))} {...tooltipStyle} />
+                                    <Area type="monotone" dataKey="amount" stroke="#e07b7b" fill="url(#spendGradient)" strokeWidth={2} name="Total Spent" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </Paper>
+                    </Grid>
                 )}
 
-            </Stack>
+            </Grid>
         </Box>
     );
 }
