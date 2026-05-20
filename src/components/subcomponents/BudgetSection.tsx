@@ -86,10 +86,7 @@ export default function BudgetSection(sectionID: any) {
 
     return (
         <>
-            <Paper elevation={4} sx={(theme) => ({
-                borderRadius: 5, width: '100%', border: 2, borderColor:
-                    section?.sectionType === 'expense' ? alpha(theme.palette.warning.main, 0.2) : alpha(theme.palette.success.main, 0.2)
-            })}>
+            <Paper elevation={4} sx={{ borderRadius: 5, width: '100%' }}>
                 <Box sx={{ width: '100%' }}>
                     <List sx={{ width: '100%', pb: 0.5 }}>
                         <ListItem disablePadding key={1}>
