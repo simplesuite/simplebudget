@@ -16,6 +16,9 @@ import { styled, useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import GlobalJS from "../extras/GlobalJS";
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import { alpha } from '@mui/material/styles';
 
 const formatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -92,6 +95,7 @@ export default function BudgetSection(sectionID: any) {
                                     <Typography style={{ overflow: "hidden", textOverflow: "ellipsis" }} color='text.secondary' variant='h6' sx={{ fontWeight: '600' }}>
                                         {section?.sectionName}
                                     </Typography>
+
                                 </Grid>
                                 <Grid size={3.25} sx={{ textAlign: 'right', pt: 2 }}><Typography color='text.disabled' variant="subtitle2">Planned</Typography></Grid>
                                 <Grid size={3.25} sx={{ textAlign: 'right', pt: 2 }}><Typography color='text.disabled' variant="subtitle2">Remaining</Typography></Grid>
@@ -125,7 +129,7 @@ export default function BudgetSection(sectionID: any) {
                     </List>
                     <Box display='flex' justifyContent='space-between' sx={{ mx: 0.5, mb: 0 }}>
                         <Button size='small' variant='text' startIcon={<PlaylistAddIcon />} onClick={openAddCategory}>Add Category</Button>
-                        <IconButton onClick={openSection} size='small'><MoreHorizIcon /></IconButton>
+                        <IconButton sx={{ ml: 2 }} onClick={openSection} size='small'><MoreHorizIcon /></IconButton>
                     </Box>
                 </Box>
             </Paper>

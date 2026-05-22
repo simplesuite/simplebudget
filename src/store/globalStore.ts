@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { createTheme } from "@mui/material/styles";
+import { getSupabaseStorageKey } from "../lib/supabase";
 
 export const primaryMain = '#4c809e';
 export const secondaryMain = '#D6A058';
@@ -38,10 +39,19 @@ if (localStorage.getItem("userTheme") === null) {
 let user: any;
 let auth: string;
 try {
-    const raw = localStorage.getItem('sb-psdmjjcvaxejxktqwdcm-auth-token');
+    const storageKey = getSupabaseStorageKey();
+    const raw = localStorage.getItem(storageKey);
     if (raw) {
         const parsed = JSON.parse(raw);
         user = parsed?.user ?? null;
+        // In newer supabase-js, user may be stored separately at <key>-user
+        if (!user) {
+            const userRaw = localStorage.getItem(storageKey + '-user');
+            if (userRaw) {
+                const userParsed = JSON.parse(userRaw);
+                user = userParsed?.user ?? null;
+            }
+        }
     }
 } catch {
     user = null;

@@ -222,7 +222,7 @@ export default function EditCategory() {
                                     <Paper elevation={1} sx={{ borderRadius: 3 }}>
                                         <Box display='flex' alignItems='center' justifyContent='space-evenly' sx={{ width: '100%', p: 1, textAlign: 'center' }}>
                                             <Paper elevation={3} sx={{ px: 1 }}>
-                                                <Typography color='text.secondary' variant='body1'>Budgeted: {formatter.format(catAllowedTotal * incomeType)}</Typography>
+                                                <Typography color='text.secondary' variant='body1'>Planned: {formatter.format(catAllowedTotal * incomeType)}</Typography>
                                             </Paper>
                                             <Paper elevation={3} sx={{ mx: 1, px: 1 }}>
                                                 <Typography color='text.secondary' variant='body1'>Tracked: {formatter.format(categorySum)}</Typography>
