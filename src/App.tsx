@@ -48,6 +48,7 @@ import AreYouSure from "./components/subcomponents/AreYouSure";
 import EditTransaction from "./components/modals/EditTransaction";
 import UpdatePrompt from "./components/subcomponents/UpdatePrompt";
 import { usePwaStore } from "./store/pwaStore";
+import { hasSupabaseSession, supabase } from "./lib/supabase";
 import { initOfflineSync } from "./lib/offlineSync";
 
 const fabStyle = {
@@ -93,6 +94,22 @@ export default function App() {
   const loadingOpen = useGlobalStore(s => s.mainLoading)
   const setLoadingOpen = useGlobalStore(s => s.setMainLoading)
   const [addToHomePU, setAddToHomePU] = React.useState(false)
+  const [authChecked, setAuthChecked] = React.useState(false)
+  const [isAuthenticated, setIsAuthenticated] = React.useState(() => hasSupabaseSession())
+
+  // Listen for auth state changes to handle login/logout properly
+  React.useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+      setAuthChecked(true);
+    });
+    // Also check current session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAuthenticated(!!session);
+      setAuthChecked(true);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Initialize offline sync listeners
   React.useEffect(() => {
@@ -130,7 +147,12 @@ export default function App() {
     }
   }, [currentTheme])
 
-  if (localStorage.getItem('sb-psdmjjcvaxejxktqwdcm-auth-token') === null) { return <Navigate to="/login" /> }
+  // Wait for auth check to complete before rendering
+  if (!authChecked && !isAuthenticated) {
+    return null;
+  }
+
+  if (!isAuthenticated && authChecked) { return <Navigate to="/login" /> }
 
   if (location.pathname === '/') { return <Navigate to="/budget" /> }
 

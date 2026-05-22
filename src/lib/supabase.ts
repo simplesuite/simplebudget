@@ -106,4 +106,22 @@ export function isSelfHostedConfig(): boolean {
     return !!(window.__SUPABASE_CONFIG__?.url && window.__SUPABASE_CONFIG__?.key);
 }
 
+/**
+ * Returns the localStorage key that the Supabase client uses to store the auth token.
+ * Mirrors the logic in @supabase/supabase-js SupabaseClient constructor:
+ *   `sb-${new URL(supabaseUrl).hostname.split(".")[0]}-auth-token`
+ */
+export function getSupabaseStorageKey(): string {
+    const url = new URL(SUPABASE_URL);
+    return `sb-${url.hostname.split(".")[0]}-auth-token`;
+}
+
+/**
+ * Checks whether a Supabase auth token exists in localStorage
+ * for the currently configured Supabase URL.
+ */
+export function hasSupabaseSession(): boolean {
+    return localStorage.getItem(getSupabaseStorageKey()) !== null;
+}
+
 export { supabase, SUPABASE_URL, SUPABASE_KEY };
