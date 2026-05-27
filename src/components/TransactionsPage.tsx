@@ -127,7 +127,7 @@ export default function TransactionsPage() {
                                                     const section = sectionsArray.find(x => x.recordID === category?.sectionID)
                                                     return {
                                                         backgroundColor:
-                                                            section?.sectionType === 'expense' ? alpha(theme.palette.warning.light, 0.5) : alpha(theme.palette.success.light, 0.5)
+                                                            section?.sectionType === 'expense' ? alpha(theme.palette.warning.main, 0.2) : alpha(theme.palette.success.main, 0.2)
                                                     }
                                                 }}
                                             />
