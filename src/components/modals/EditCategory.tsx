@@ -39,6 +39,8 @@ import GlobalJS from "../extras/GlobalJS";
 import LinearProgress from '@mui/material/LinearProgress';
 import useCategoryActions from "../extras/useCategoryActions";
 import OfflineAlert, { useIsOffline } from "../extras/OfflineAlert";
+import { useHistoricalBudget } from "../extras/useHistoricalBudget";
+import HistoryIcon from '@mui/icons-material/History';
 
 const formatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -76,6 +78,11 @@ export default function EditCategory() {
         currentSection,
         currentSectionType,
     } = useCategoryActions();
+
+    const { oneMonthAgo, oneYearAgo, loading: histLoading } = useHistoricalBudget(
+        currentCategoryDetails?.categoryName,
+        editMode
+    );
 
     const setTransactionCategory = useGlobalStore(s => s.setAddTransactionCategory);
     const setAddNewTransaction = useModalStore(s => s.setAddTransaction);
@@ -209,14 +216,25 @@ export default function EditCategory() {
                         <Grid container spacing={1}>
                             <Grid size={12}>
                                 {editMode ?
-                                    <TextField fullWidth sx={{ mb: 1 }} onFocus={handleFocus}
-                                        value={categoryAmount} onChange={(e: any) => setCategoryAmount(e.target.value)}
-                                        type="number"
-                                        slotProps={{
-                                            input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
-                                            htmlInput: { step: 'any' },
-                                        }}
-                                        placeholder='Budget Amount' label="Budget Amount" />
+                                    <>
+                                        <TextField fullWidth sx={{ mb: 1 }} onFocus={handleFocus}
+                                            value={categoryAmount} onChange={(e: any) => setCategoryAmount(e.target.value)}
+                                            type="number"
+                                            slotProps={{
+                                                input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
+                                                htmlInput: { step: 'any' },
+                                            }}
+                                            placeholder='Budget Amount' label="Budget Amount" />
+                                        <Box display='flex' alignItems='center' gap={0.5} sx={{ mb: 1 }}>
+                                            <HistoryIcon fontSize='small' color='action' />
+                                            <Typography variant='body2' color='text.secondary'>
+                                                1 month ago: {histLoading ? '...' : oneMonthAgo !== null ? formatter.format(oneMonthAgo) : 'N/A'}
+                                            </Typography>
+                                            <Typography variant='body2' color='text.secondary' sx={{ ml: 2 }}>
+                                                1 year ago: {histLoading ? '...' : oneYearAgo !== null ? formatter.format(oneYearAgo) : 'N/A'}
+                                            </Typography>
+                                        </Box>
+                                    </>
                                     : null}
                                 <Stack direction='row' justifyContent='space-between'>
                                     <Paper elevation={1} sx={{ borderRadius: 3 }}>

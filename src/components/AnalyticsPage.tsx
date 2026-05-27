@@ -87,8 +87,8 @@ function ThisMonthTab() {
         },
     };
 
-    const renderPieLabel = ({ name, percent }: any) =>
-        percent > 0.05 ? `${name} ${(percent * 100).toFixed(0)}%` : '';
+    const renderPieLabel = ({ name, value }: any) =>
+        value > 0 ? `${name} ${formatter.format(value)}` : '';
 
     return (
         <Grid container spacing={2} sx={{ maxWidth: { xs: 500, md: 1040 }, width: '100%' }}>
@@ -385,9 +385,9 @@ function TrendsTab() {
         // Skip categories that only exist in the current month (new categories)
         if (lastMonthAmt === 0) return;
         if (thisMonthAmt > 0) {
-            const pctChange = Math.round(((thisMonthAmt - lastMonthAmt) / lastMonthAmt) * 100);
-            if (pctChange !== 0) {
-                categoryInsights.push({ name, change: pctChange, direction: pctChange > 0 ? 'up' : 'down' });
+            const amtChange = Math.round((thisMonthAmt - lastMonthAmt) * 100) / 100;
+            if (amtChange !== 0) {
+                categoryInsights.push({ name, change: amtChange, direction: amtChange > 0 ? 'up' : 'down' });
             }
         }
     });
@@ -436,7 +436,7 @@ function TrendsTab() {
                                 <Chip
                                     size="small"
                                     icon={thisMonth.totalSpent > lastMonth.totalSpent ? <TrendingUpIcon /> : <TrendingDownIcon />}
-                                    label={`Expenses ${thisMonth.totalSpent > lastMonth.totalSpent ? '+' : ''}${Math.round(((thisMonth.totalSpent - lastMonth.totalSpent) / lastMonth.totalSpent) * 100)}%`}
+                                    label={`Expenses ${thisMonth.totalSpent > lastMonth.totalSpent ? '+' : ''}${formatter.format(thisMonth.totalSpent - lastMonth.totalSpent)}`}
                                     color={thisMonth.totalSpent > lastMonth.totalSpent ? 'warning' : 'success'}
                                     variant="outlined"
                                 />
@@ -444,7 +444,7 @@ function TrendsTab() {
                                     <Chip
                                         size="small"
                                         icon={thisMonth.totalIncome >= lastMonth.totalIncome ? <TrendingUpIcon /> : <TrendingDownIcon />}
-                                        label={`Income ${thisMonth.totalIncome >= lastMonth.totalIncome ? '+' : ''}${Math.round(((thisMonth.totalIncome - lastMonth.totalIncome) / lastMonth.totalIncome) * 100)}%`}
+                                        label={`Income ${thisMonth.totalIncome >= lastMonth.totalIncome ? '+' : ''}${formatter.format(thisMonth.totalIncome - lastMonth.totalIncome)}`}
                                         color={thisMonth.totalIncome >= lastMonth.totalIncome ? 'success' : 'warning'}
                                         variant="outlined"
                                     />
@@ -478,7 +478,7 @@ function TrendsTab() {
                                 <Chip
                                     size="small"
                                     icon={thisMonth.totalSpent > oneYearAgo.totalSpent ? <TrendingUpIcon /> : <TrendingDownIcon />}
-                                    label={`Expenses ${thisMonth.totalSpent > oneYearAgo.totalSpent ? '+' : ''}${Math.round(((thisMonth.totalSpent - oneYearAgo.totalSpent) / oneYearAgo.totalSpent) * 100)}%`}
+                                    label={`Expenses ${thisMonth.totalSpent > oneYearAgo.totalSpent ? '+' : ''}${formatter.format(thisMonth.totalSpent - oneYearAgo.totalSpent)}`}
                                     color={thisMonth.totalSpent > oneYearAgo.totalSpent ? 'warning' : 'success'}
                                     variant="outlined"
                                 />
@@ -486,7 +486,7 @@ function TrendsTab() {
                                     <Chip
                                         size="small"
                                         icon={thisMonth.totalIncome >= oneYearAgo.totalIncome ? <TrendingUpIcon /> : <TrendingDownIcon />}
-                                        label={`Income ${thisMonth.totalIncome >= oneYearAgo.totalIncome ? '+' : ''}${Math.round(((thisMonth.totalIncome - oneYearAgo.totalIncome) / oneYearAgo.totalIncome) * 100)}%`}
+                                        label={`Income ${thisMonth.totalIncome >= oneYearAgo.totalIncome ? '+' : ''}${formatter.format(thisMonth.totalIncome - oneYearAgo.totalIncome)}`}
                                         color={thisMonth.totalIncome >= oneYearAgo.totalIncome ? 'success' : 'warning'}
                                         variant="outlined"
                                     />
@@ -537,7 +537,7 @@ function TrendsTab() {
                                             : <TrendingDownIcon fontSize='small' color='success' />
                                         }
                                         <Typography variant='body2' color='text.secondary'>
-                                            You spent <strong>{Math.abs(insight.change)}% {insight.direction === 'up' ? 'more' : 'less'}</strong> on <strong>{insight.name}</strong> this month than last month
+                                            You spent <strong>{formatter.format(Math.abs(insight.change))} {insight.direction === 'up' ? 'more' : 'less'}</strong> on <strong>{insight.name}</strong> this month than last month
                                         </Typography>
                                     </Box>
                                 ))}

@@ -48,6 +48,8 @@ import TextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
 import SaveIcon from '@mui/icons-material/Save';
 import { useIsOffline } from "./extras/OfflineAlert";
+import { useHistoricalBudget } from "./extras/useHistoricalBudget";
+import HistoryIcon from '@mui/icons-material/History';
 
 const formatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -223,6 +225,11 @@ export default function BudgetPage() {
         }
     }, [selectedCategoryID, selectedCategory?.categoryName, selectedCategory?.amount, selectedCategory?.categoryNote]);
 
+    const { oneMonthAgo, oneYearAgo, loading: histLoading } = useHistoricalBudget(
+        selectedCategory?.categoryName,
+        sidebarEditMode
+    );
+
     function sumCat(idVal: string) {
         return categoryArray.filter(x => x.sectionID === idVal).reduce((accumulator, object) => {
             return accumulator + object.amount;
@@ -396,7 +403,7 @@ export default function BudgetPage() {
                                             {selectedSection?.sectionType === 'income' ? ' · Income' : ' · Expense'}
                                         </Typography>
                                         {sidebarEditMode ? (
-                                            <Box sx={{ mt: 0.5 }}>
+                                            <Box sx={{ mt: 0.5, mb: 1 }}>
                                                 <TextField size='small' variant='filled' fullWidth
                                                     value={sidebarEditName}
                                                     onChange={(e) => setSidebarEditName(e.target.value)}
@@ -409,6 +416,15 @@ export default function BudgetPage() {
                                                         input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
                                                         htmlInput: { step: 'any' },
                                                     }} />
+                                                <Box display='flex' alignItems='center' gap={0.5} sx={{ mt: 1 }}>
+                                                    <HistoryIcon fontSize='small' color='action' />
+                                                    <Typography variant='body2' color='text.secondary'>
+                                                        1 month ago: {histLoading ? '...' : oneMonthAgo !== null ? formatter.format(oneMonthAgo) : 'N/A'}
+                                                    </Typography>
+                                                    <Typography variant='body2' color='text.secondary' sx={{ ml: 2 }}>
+                                                        1 year ago: {histLoading ? '...' : oneYearAgo !== null ? formatter.format(oneYearAgo) : 'N/A'}
+                                                    </Typography>
+                                                </Box>
                                                 <Button size='small' fullWidth variant='contained' startIcon={<SaveIcon />}
                                                     sx={{ mt: 1 }}
                                                     disabled={offline}
@@ -420,36 +436,43 @@ export default function BudgetPage() {
                                                 </Button>
                                             </Box>
                                         ) : (
-                                            <Typography variant='h6'>{selectedCategory.categoryName}</Typography>
+                                            <Typography variant='h6' sx={{ my: 1 }}>{selectedCategory.categoryName}</Typography>
                                         )}
                                     </Box>
                                     <IconButton size='small' onClick={(e) => setSidebarAnchorEl(e.currentTarget)}>
                                         <MoreVertIcon />
                                     </IconButton>
                                 </Box>
-                                <Box display='flex' justifyContent='space-between' sx={{ mt: 0.5 }}>
-                                    <Typography variant='body2' color='text.secondary'>
-                                        Planned: {formatter.format(selectedCategory.amount)}
-                                    </Typography>
-                                    <Typography variant='body2' color='text.secondary'>
-                                        Tracked: {formatter.format(Math.abs(sidebarTracked))}
-                                    </Typography>
-                                    <Typography
-                                        variant='body2'
-                                        sx={{ fontWeight: 'bold' }}
-                                        color={sidebarRemaining < 0 ? 'error.main' : 'success.main'}
-                                    >
-                                        Remaining: {formatter.format(sidebarRemaining)}
-                                    </Typography>
+                                <Box>
+                                    <Paper elevation={1} sx={{ borderRadius: 3, my: 1 }}>
+                                        <Box display='flex' alignItems='center' justifyContent='space-evenly' sx={{ width: '100%', p: 1, textAlign: 'center' }} gap={1}>
+                                            <Paper elevation={3} sx={{ px: 1, width: '100%' }}>
+                                                <Typography variant='body2' color='text.secondary'>
+                                                    Planned: <br /> {formatter.format(selectedCategory.amount)}
+                                                </Typography>
+                                            </Paper>
+                                            <Paper elevation={3} sx={{ px: 1, width: '100%' }}>
+                                                <Typography variant='body2' color='text.secondary'>
+                                                    Tracked: <br /> {formatter.format(Math.abs(sidebarTracked))}
+                                                </Typography>
+                                            </Paper>
+                                            <Paper elevation={3} sx={{ px: 1, width: '100%' }}>
+                                                <Typography
+                                                    variant='body2'
+                                                    sx={{ fontWeight: 'bold' }}
+                                                    color={sidebarRemaining < 0 ? 'error.main' : 'success.main'}
+                                                >
+                                                    Remaining: <br /> {formatter.format(sidebarRemaining)}
+                                                </Typography>
+                                            </Paper>
+                                        </Box>
+                                        <LinearProgress sx={{ height: 6, borderBottomRightRadius: 6, borderBottomLeftRadius: 6 }}
+                                            variant="determinate" color={sidebarSpent > selectedCategory.amount ? 'error' : 'success'}
+                                            value={Math.min((sidebarSpent / (selectedCategory.amount || 1)) * 100, 100)} />
+                                    </Paper>
                                 </Box>
-                                <LinearProgress
-                                    sx={{ height: 4, borderRadius: 2, mt: 1 }}
-                                    variant="determinate"
-                                    color={sidebarSpent > selectedCategory.amount ? 'error' : 'success'}
-                                    value={Math.min((sidebarSpent / (selectedCategory.amount || 1)) * 100, 100)}
-                                />
                             </Box>
-                            <Box sx={{ px: 1.5, pb: 1 }}>
+                            <Box sx={{ px: 1.5, pb: 1, my: 1 }}>
                                 <TextField
                                     fullWidth
                                     multiline
@@ -518,7 +541,7 @@ export default function BudgetPage() {
                     setSidebarAnchorEl(null);
                     setSidebarEditName(selectedCategory?.categoryName || '');
                     setSidebarEditAmount(selectedCategory?.amount || 0);
-                    setSidebarEditMode(true);
+                    setSidebarEditMode(!sidebarEditMode);
                 }}>
                     <EditIcon sx={{ mr: 1 }} />Edit Category
                 </MenuItem>
