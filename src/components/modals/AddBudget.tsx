@@ -1,4 +1,5 @@
 import React from 'react';
+import dayjs from "dayjs";
 import TextField from "@mui/material/TextField";
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -105,10 +106,12 @@ export default function AddBudget() {
             return
         }
         setBudgetArray(prevState => [...prevState, newBudget]);
+        const resolvedYear = currentBudgetDetails.year || Number(dayjs().format('YYYY'));
+        const resolvedMonth = currentBudgetDetails.month || dayjs().format('MMMM');
         let currentBudget = {
             budgetID: newBudget.recordID,
-            year: currentBudgetDetails.year,
-            month: currentBudgetDetails.month,
+            year: resolvedYear,
+            month: resolvedMonth,
         }
         localStorage.setItem('currentBudget', JSON.stringify(currentBudget))
         setCurrentBudget(currentBudget)
@@ -124,8 +127,8 @@ export default function AddBudget() {
                     budgetID: newBudget.recordID,
                     sectionName: template.sectionName,
                     sectionType: template.sectionType,
-                    sectionYear: currentBudgetDetails.year,
-                    sectionMonth: currentBudgetDetails.month,
+                    sectionYear: resolvedYear,
+                    sectionMonth: resolvedMonth,
                 });
                 for (const catName of template.categories) {
                     allCategories.push({
@@ -159,7 +162,7 @@ export default function AddBudget() {
             setCategoryArray(prev => [...prev, ...allCategories]);
         }
 
-        await grabBudgetData(currentBudget.budgetID, currentBudgetDetails.year, currentBudgetDetails.month)
+        await grabBudgetData(currentBudget.budgetID, resolvedYear, resolvedMonth)
         setAddNewBudget(false)
         setLoadingOpen(false)
         setSnackSev('success')
