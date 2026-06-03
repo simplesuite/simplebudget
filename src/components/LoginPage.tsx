@@ -50,7 +50,7 @@ export default function LoginPage() {
             .from('users')
             .select('fullName,userType')
             .eq('recordID', data.user!.id)
-        if (users) {
+        if (users && users.length > 0) {
             await setCurrentUser(
                 {
                     recordID: data.user!.id,
@@ -68,6 +68,31 @@ export default function LoginPage() {
             setLoadingOpen(false)
             return
         }
+        // First login after email confirmation — create the public.users record
+        const fullName = data.user!.user_metadata?.full_name || ''
+        const { error: insertErr } = await supabase
+            .from('users')
+            .insert({
+                recordID: data.user!.id,
+                fullName: fullName,
+                userType: 'free'
+            })
+        if (insertErr) {
+            setErrorText(insertErr.message)
+            setLoadingOpen(false)
+            return
+        }
+        await setCurrentUser({
+            recordID: data.user!.id,
+            fullName: fullName,
+            userType: 'free',
+        })
+        localStorage.setItem('fullName', fullName)
+        navigate("/budget", { replace: true });
+        setSnackSev('success')
+        setSnackText('Login Successful')
+        setSnackOpen(true)
+        setLoadingOpen(false)
     }
     function validateForm() {
         return (email.length > 0 && password.length > 0)
