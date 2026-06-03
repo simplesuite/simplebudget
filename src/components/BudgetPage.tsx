@@ -49,6 +49,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import SaveIcon from '@mui/icons-material/Save';
 import { useIsOffline } from "./extras/OfflineAlert";
 import { useHistoricalBudget } from "./extras/useHistoricalBudget";
+import { ensureUserRecord } from "./extras/ensureUserRecord";
 import HistoryIcon from '@mui/icons-material/History';
 
 const formatter = new Intl.NumberFormat('en-US', {
@@ -388,7 +389,7 @@ export default function BudgetPage() {
                             <BudgetSection sectionID={row.recordID} key={row.recordID} />
                         )
                         )}
-                        <Button variant='outlined' color='secondary' startIcon={<PostAddIcon />} onClick={() => setAddNewSection(true)} disabled={offline}>Add Section</Button>
+                        <Button variant='outlined' color='secondary' startIcon={<PostAddIcon />} onClick={async () => { await ensureUserRecord(); setAddNewSection(true); }} disabled={offline}>Add Section</Button>
                     </Stack>
                 </Box>
 

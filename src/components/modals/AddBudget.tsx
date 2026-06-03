@@ -14,6 +14,7 @@ import { useTableStore } from "../../store/tableStore";
 import { v4 as uuidv4 } from "uuid";
 import { supabase } from "../../lib/supabase";
 import { ensureSession } from "../extras/ensureSession";
+import { ensureUserRecord } from "../extras/ensureUserRecord";
 import useGrabBudgetData from "../extras/GrabBudgetData";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from '@mui/icons-material/Close';
@@ -92,9 +93,16 @@ export default function AddBudget() {
         }
         setLoadingOpen(true)
         await ensureSession();
+        const userReady = await ensureUserRecord();
+        if (!userReady) {
+            setLoadingOpen(false)
+            setErrorText('Unable to verify your account. Please try logging out and back in.')
+            return
+        }
+        const currentRecordID = useGlobalStore.getState().currentUser.recordID;
         let newBudget = {
             recordID: uuidv4(),
-            creatorID: currentUserDetails.recordID,
+            creatorID: currentRecordID,
             budgetName: budgetName,
         }
         const { error } = await supabase
