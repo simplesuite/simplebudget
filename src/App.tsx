@@ -50,6 +50,7 @@ import UpdatePrompt from "./components/subcomponents/UpdatePrompt";
 import { usePwaStore } from "./store/pwaStore";
 import { hasSupabaseSession, supabase } from "./lib/supabase";
 import { initOfflineSync } from "./lib/offlineSync";
+import { ensureUserRecord } from "./components/extras/ensureUserRecord";
 
 const fabStyle = {
   position: 'fixed',
@@ -99,9 +100,14 @@ export default function App() {
 
   // Listen for auth state changes to handle login/logout properly
   React.useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setIsAuthenticated(!!session);
       setAuthChecked(true);
+
+      // When a user confirms email and lands here, ensure public.users record exists
+      if (session?.user && !currentUserInfo.recordID) {
+        await ensureUserRecord();
+      }
     });
     // Also check current session on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -137,7 +143,7 @@ export default function App() {
 
   React.useEffect(() => {
     supaRefresh()
-  }, [])
+  }, [currentUserInfo.recordID])
 
   React.useEffect(() => {
     if (currentTheme === 'dark') {
