@@ -83,23 +83,44 @@ export default function SignUpPage() {
             try {
                 const { data: userData, error: signupErr } = await supabase.auth.signUp({
                     email: email,
-                    password: password
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: fullName
+                        }
+                    }
                 })
                 if (signupErr) {
-                    setErrorText(signupErr.message)
+                    if (signupErr.status === 429) {
+                        setErrorText("Too many attempts. Please wait a moment and try again.")
+                    } else {
+                        setErrorText(signupErr.message)
+                    }
                     console.error(signupErr?.message, signupErr?.code)
                     return
                 }
-                if (!userData) {
-                    setErrorText("Error adding user")
-                    console.error("Error adding user", 1234)
+                if (!userData?.user?.id) {
+                    // Email confirmation is enabled — Supabase won't return the user
+                    // until confirmed. Show success and handle public.users insert on first login.
+                    setSignedUpBool(true)
+                    setSnackSev('success')
+                    setSnackText('Signup Successful - please verify email to login')
+                    setSnackOpen(true)
+                    return
+                }
+                // Supabase returns an existing user with empty identities (instead of an error)
+                // when the email is already registered — this prevents email enumeration.
+                if (userData.user.identities?.length === 0) {
+                    setErrorText("User with this email already exists")
+                    console.error("Signup returned existing user with no identities")
                     return
                 }
 
+                const userId = userData.user.id
                 const { error: signupErr1 } = await supabase
                     .from('users')
                     .insert({
-                        recordID: userData.user?.id,
+                        recordID: userId,
                         fullName: fullName,
                         userType: 'free'
                     })
@@ -111,7 +132,7 @@ export default function SignUpPage() {
 
                 // Only run on success — no finally block
                 setCurrentUser({
-                    recordID: userData.user?.id ?? '',
+                    recordID: userId,
                     fullName: fullName,
                     userType: 'free'
                 });
@@ -180,10 +201,13 @@ export default function SignUpPage() {
                                 <>
                                     <Grid size={12} sx={{ mb: 0, pb: 1 }}>
                                         <Typography color='text.secondary' variant='h6' sx={{ fontWeight: '600' }}>Congrats! You're signed up.</Typography>
-                                        <Typography variant='subtitle1' sx={{ fontWeight: '800' }}>{'>>'}To log in, please verify your email first.</Typography>
+                                        <Typography variant='subtitle1' sx={{ fontWeight: '800' }}>We sent you an email - you'll need verify it before you log in.</Typography>
                                     </Grid>
                                     <Grid size={12} sx={{ mb: 0, pb: 1 }}>
-                                        <Typography variant='body2'>P.S., it's OK to close this window. The email will have a link back here.</Typography>
+                                        <Typography variant='subtitle2'>It's OK to close this window. The email will have a link back here.</Typography>
+                                    </Grid>
+                                    <Grid size={12} sx={{ mb: 0, pb: 1 }}>
+                                        <Typography variant='body2'>NOTE - if you are signing up on a self-hosted instance, there is no email verification. Just click the link below and sign in.</Typography>
                                     </Grid>
                                     <Grid size={12} sx={{ mb: 0, pb: 1 }}>
                                         <Typography variant='body2' display='inline'>Otherwise, click <Button sx={{ m: 0, p: 0 }} size='small' onClick={handleRedirectSignUp}>HERE</Button> to go to the sign in page.</Typography>
