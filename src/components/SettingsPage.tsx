@@ -22,7 +22,9 @@ import ShareIcon from '@mui/icons-material/Share';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { supabase } from "../lib/supabase";
+import { redirectToCheckout } from "../lib/checkout";
 import DeleteIcon from '@mui/icons-material/Delete';
+import StarIcon from '@mui/icons-material/Star';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import ShareBudget from "./modals/ShareBudget";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -68,6 +70,18 @@ export default function SettingsPage() {
     const setSelectBudgetOpen = useModalStore(s => s.setSelectBudget)
     let currentBudgetDetails = budgetsArray.find(x => x.recordID === currentBudget.budgetID)
     const [qrOpen, setQrOpen] = React.useState(false)
+    const [checkoutLoading, setCheckoutLoading] = React.useState(false)
+    const handleUpgrade = async () => {
+        setCheckoutLoading(true)
+        try {
+            await redirectToCheckout("pro")
+        } catch (err: any) {
+            setSnackSev('error')
+            setSnackText(err.message || 'Failed to start checkout')
+            setSnackOpen(true)
+            setCheckoutLoading(false)
+        }
+    }
     const handleThemeClick = (event: any) => {
         setSlideCheck(event.target.checked);
         if (event.target.checked) {
@@ -214,6 +228,25 @@ export default function SettingsPage() {
                                     </ListItemIcon>
                                     <ListItemText primary="Dark Mode" />
                                     <Switch sx={{ ml: 1 }} size='small' checked={slideCheck} onChange={handleThemeClick} />
+                                </ListItemButton>
+                            </ListItem>
+                        </List>
+                    </Paper>
+                    <Paper elevation={4} sx={{ width: '100%', borderRadius: 3 }}>
+                        <List>
+                            <ListItem disablePadding>
+                                <Typography color='text.secondary' variant='h6' sx={{ fontWeight: '600', ml: 1 }}>Subscription</Typography>
+                            </ListItem>
+                            <Divider />
+                            <ListItem disablePadding>
+                                <ListItemButton onClick={handleUpgrade} disabled={offline || checkoutLoading}>
+                                    <ListItemIcon>
+                                        <StarIcon />
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primary="Upgrade to Pro"
+                                        secondary={checkoutLoading ? "Redirecting to checkout..." : "Unlock premium features"}
+                                    />
                                 </ListItemButton>
                             </ListItem>
                         </List>
