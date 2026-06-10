@@ -7,6 +7,8 @@ import ListItemText from '@mui/material/ListItemText';
 import DialogTitle from '@mui/material/DialogTitle';
 import Dialog from '@mui/material/Dialog';
 import AddIcon from '@mui/icons-material/Add';
+import LockIcon from '@mui/icons-material/Lock';
+import Chip from '@mui/material/Chip';
 import { useModalStore } from '../../store/modalStore';
 import { useTableStore } from '../../store/tableStore';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -20,6 +22,7 @@ import IconButton from "@mui/material/IconButton";
 import dayjs from "dayjs";
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
+import { useEntitlement } from "../../lib/checkout";
 
 export default function SelectBudget() {
     const { grabBudgetData } = useGrabBudgetData();
@@ -38,6 +41,9 @@ export default function SelectBudget() {
     const setCurrentBudget = useTableStore(s => s.setCurrentBudgetAndMonth)
     const theme = useTheme();
     const bigger = useMediaQuery(theme.breakpoints.up('sm'));
+    const { subscriptionState } = useEntitlement();
+    const hasPro = subscriptionState !== 'free';
+    const canCreateBudget = hasPro || budgetsArray.length < 1;
     React.useEffect(() => {
         if (open) {
             findUserNames()
@@ -112,13 +118,17 @@ export default function SelectBudget() {
                             </ListItem>
                         ))}
                         <ListItem disablePadding key={1}>
-                            <ListItemButton onClick={() => handleListItemClick('addBudget')}>
+                            <ListItemButton onClick={() => handleListItemClick('addBudget')} disabled={!canCreateBudget}>
                                 <ListItemAvatar>
                                     <Avatar>
-                                        <AddIcon />
+                                        {canCreateBudget ? <AddIcon /> : <LockIcon />}
                                     </Avatar>
                                 </ListItemAvatar>
-                                <ListItemText primary="Add Budget" />
+                                <ListItemText
+                                    primary="Add Budget"
+                                    secondary={!canCreateBudget ? "Pro feature" : undefined}
+                                />
+                                {!canCreateBudget && <Chip label="Pro" size="small" variant="outlined" sx={{ ml: 1 }} />}
                             </ListItemButton>
                         </ListItem>
                     </List>

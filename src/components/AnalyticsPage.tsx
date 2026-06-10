@@ -10,6 +10,7 @@ import { useTableStore } from '../store/tableStore';
 import Typography from '@mui/material/Typography';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import LockIcon from '@mui/icons-material/Lock';
 import dayjs from 'dayjs';
 import {
     PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
@@ -17,6 +18,7 @@ import {
     AreaChart, Area, LineChart, Line,
 } from 'recharts';
 import { supabase } from '../lib/supabase';
+import { useEntitlement } from '../lib/checkout';
 
 const formatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -553,6 +555,8 @@ function TrendsTab() {
 // --- Main Page ---
 export default function AnalyticsPage() {
     const [tab, setTab] = React.useState(0);
+    const { subscriptionState } = useEntitlement();
+    const hasPro = subscriptionState !== 'free';
 
     React.useEffect(() => { window.scrollTo(0, 0); }, []);
 
@@ -564,11 +568,26 @@ export default function AnalyticsPage() {
                 sx={{ mb: 2 }}
             >
                 <Tab label="This Month" />
-                <Tab label="Trends" />
+                <Tab label="Trends" icon={!hasPro ? <LockIcon fontSize="small" /> : undefined} iconPosition="end" />
             </Tabs>
 
             {tab === 0 && <ThisMonthTab />}
-            {tab === 1 && <TrendsTab />}
+            {tab === 1 && (
+                hasPro ? (
+                    <TrendsTab />
+                ) : (
+                    <Paper elevation={4} sx={{ borderRadius: 3, p: 4, maxWidth: 400, textAlign: 'center' }}>
+                        <LockIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
+                        <Typography variant="h6" color="text.secondary" gutterBottom>
+                            Trends is a Pro feature
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            Upgrade to Pro to unlock historical spending trends, month-over-month comparisons, and category insights.
+                        </Typography>
+                        <Chip label="Pro" size="small" variant="outlined" sx={{ mt: 2 }} />
+                    </Paper>
+                )
+            )}
         </Box>
     );
 }
