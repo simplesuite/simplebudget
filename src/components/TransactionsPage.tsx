@@ -148,7 +148,7 @@ export default function TransactionsPage() {
     return (
         <>
             <Box display='flex' flexDirection='column' alignItems='center'>
-                <Stack spacing={2} alignItems="stretch" sx={{ maxWidth: 400, width: '100%' }}>
+                <Stack spacing={2} alignItems="stretch" sx={{ maxWidth: 600, width: '100%' }}>
                     <Typography sx={{ alignSelf: 'flex-start' }} color='text.secondary' variant='h6'>Transactions</Typography>
                     <TextField
                         fullWidth
