@@ -20,11 +20,14 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import ShareIcon from '@mui/icons-material/Share';
 import LockResetIcon from '@mui/icons-material/LockReset';
+import LockIcon from '@mui/icons-material/Lock';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { supabase } from "../lib/supabase";
-import { redirectToCheckout } from "../lib/checkout";
+import { redirectToCheckout, redirectToBillingPortal, useEntitlement } from "../lib/checkout";
 import DeleteIcon from '@mui/icons-material/Delete';
 import StarIcon from '@mui/icons-material/Star';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import Chip from '@mui/material/Chip';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import ShareBudget from "./modals/ShareBudget";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -71,15 +74,29 @@ export default function SettingsPage() {
     let currentBudgetDetails = budgetsArray.find(x => x.recordID === currentBudget.budgetID)
     const [qrOpen, setQrOpen] = React.useState(false)
     const [checkoutLoading, setCheckoutLoading] = React.useState(false)
+    const [billingLoading, setBillingLoading] = React.useState(false)
+    const { entitlement, subscriptionState, loading: entitlementLoading } = useEntitlement()
+    const hasPro = subscriptionState !== 'free'
     const handleUpgrade = async () => {
         setCheckoutLoading(true)
         try {
-            await redirectToCheckout("pro")
+            await redirectToCheckout()
         } catch (err: any) {
             setSnackSev('error')
             setSnackText(err.message || 'Failed to start checkout')
             setSnackOpen(true)
             setCheckoutLoading(false)
+        }
+    }
+    const handleManageBilling = async () => {
+        setBillingLoading(true)
+        try {
+            await redirectToBillingPortal()
+        } catch (err: any) {
+            setSnackSev('error')
+            setSnackText(err.message || 'Failed to open billing portal')
+            setSnackOpen(true)
+            setBillingLoading(false)
         }
     }
     const handleThemeClick = (event: any) => {
@@ -235,20 +252,60 @@ export default function SettingsPage() {
                     <Paper elevation={4} sx={{ width: '100%', borderRadius: 3 }}>
                         <List>
                             <ListItem disablePadding>
-                                <Typography color='text.secondary' variant='h6' sx={{ fontWeight: '600', ml: 1 }}>Subscription</Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 1 }}>
+                                    <Typography color='text.secondary' variant='h6' sx={{ fontWeight: '600' }}>Subscription</Typography>
+                                    {!entitlementLoading && (
+                                        subscriptionState === 'active' ? (
+                                            <Chip label="Pro" size="small" color="success" />
+                                        ) : subscriptionState === 'trialing' ? (
+                                            <Chip label="Trial" size="small" color="info" />
+                                        ) : subscriptionState === 'canceling' ? (
+                                            <Chip label="Canceling" size="small" color="warning" />
+                                        ) : (
+                                            <Chip label="Free" size="small" variant="outlined" />
+                                        )
+                                    )}
+                                </Box>
                             </ListItem>
                             <Divider />
-                            <ListItem disablePadding>
-                                <ListItemButton onClick={handleUpgrade} disabled={offline || checkoutLoading}>
-                                    <ListItemIcon>
-                                        <StarIcon />
-                                    </ListItemIcon>
-                                    <ListItemText
-                                        primary="Upgrade to Pro"
-                                        secondary={checkoutLoading ? "Redirecting to checkout..." : "Unlock premium features"}
-                                    />
-                                </ListItemButton>
-                            </ListItem>
+                            {subscriptionState === 'free' && (
+                                <ListItem disablePadding>
+                                    <ListItemButton onClick={handleUpgrade} disabled={offline || checkoutLoading}>
+                                        <ListItemIcon>
+                                            <StarIcon />
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primary="Upgrade to Pro"
+                                            secondary={checkoutLoading ? "Redirecting to checkout..." : "Unlock premium features"}
+                                        />
+                                    </ListItemButton>
+                                </ListItem>
+                            )}
+                            {subscriptionState === 'canceling' && (
+                                <>
+                                    <ListItem disablePadding sx={{ px: 2, py: 1 }}>
+                                        <Typography variant="body2" color="text.secondary">
+                                            Your plan is active until {entitlement?.current_period_end
+                                                ? new Date(entitlement.current_period_end).toLocaleDateString()
+                                                : 'end of billing period'}
+                                        </Typography>
+                                    </ListItem>
+                                    <Divider />
+                                </>
+                            )}
+                            {subscriptionState !== 'free' && (
+                                <ListItem disablePadding>
+                                    <ListItemButton onClick={handleManageBilling} disabled={offline || billingLoading}>
+                                        <ListItemIcon>
+                                            <ManageAccountsIcon />
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primary="Manage Subscription"
+                                            secondary={billingLoading ? "Redirecting to billing portal..." : "Update payment, cancel, or view invoices"}
+                                        />
+                                    </ListItemButton>
+                                </ListItem>
+                            )}
                         </List>
                     </Paper>
                     <Paper elevation={4} sx={{ width: '100%', borderRadius: 3 }}>
@@ -267,20 +324,28 @@ export default function SettingsPage() {
                             </ListItem>
                             <Divider />
                             <ListItem disablePadding>
-                                <ListItemButton onClick={() => setExportToCSV(true)} disabled={offline}>
+                                <ListItemButton onClick={() => setExportToCSV(true)} disabled={offline || !hasPro}>
                                     <ListItemIcon>
-                                        <FileDownloadIcon />
+                                        {hasPro ? <FileDownloadIcon /> : <LockIcon color="disabled" />}
                                     </ListItemIcon>
-                                    <ListItemText primary="Export Data to CSV" />
+                                    <ListItemText
+                                        primary="Export Data to CSV"
+                                        secondary={!hasPro ? "Pro feature" : undefined}
+                                    />
+                                    {!hasPro && <Chip label="Pro" size="small" variant="outlined" sx={{ ml: 1 }} />}
                                 </ListItemButton>
                             </ListItem>
                             <Divider />
                             <ListItem disablePadding>
-                                <ListItemButton onClick={() => setShareBudgetOpen(true)} disabled={offline}>
+                                <ListItemButton onClick={() => setShareBudgetOpen(true)} disabled={offline || !hasPro}>
                                     <ListItemIcon>
-                                        <ShareIcon />
+                                        {hasPro ? <ShareIcon /> : <LockIcon color="disabled" />}
                                     </ListItemIcon>
-                                    <ListItemText primary="Share Budget" />
+                                    <ListItemText
+                                        primary="Share Budget"
+                                        secondary={!hasPro ? "Pro feature" : undefined}
+                                    />
+                                    {!hasPro && <Chip label="Pro" size="small" variant="outlined" sx={{ ml: 1 }} />}
                                 </ListItemButton>
                             </ListItem>
                             <Divider />
@@ -301,11 +366,15 @@ export default function SettingsPage() {
                             </ListItem>
                             <Divider />
                             <ListItem disablePadding>
-                                <ListItemButton onClick={() => setQrOpen(true)}>
+                                <ListItemButton onClick={() => setQrOpen(true)} disabled={!hasPro}>
                                     <ListItemIcon>
-                                        <QrCodeIcon />
+                                        {hasPro ? <QrCodeIcon /> : <LockIcon color="disabled" />}
                                     </ListItemIcon>
-                                    <ListItemText primary="Show My QR Code" secondary="For sharing budgets" />
+                                    <ListItemText
+                                        primary="Show My QR Code"
+                                        secondary={hasPro ? "For sharing budgets" : "Pro feature"}
+                                    />
+                                    {!hasPro && <Chip label="Pro" size="small" variant="outlined" sx={{ ml: 1 }} />}
                                 </ListItemButton>
                             </ListItem>
                             <Divider />
