@@ -265,7 +265,7 @@ export default function BudgetPage() {
     return (
         <>
             <Box display='flex' justifyContent='center' gap={3}>
-                <Box display='flex' flexDirection='column' alignItems='center' sx={{ flex: '0 1 400px', width: '100%' }}>
+                <Box display='flex' flexDirection='column' alignItems='center' sx={{ flex: '0 1 600px', width: '100%' }}>
                     <Stack spacing={2} alignItems="stretch" sx={{ width: '100%' }}>
                         <Box>
                             <Box sx={{ mt: -0.5 }} display='flex' flexDirection='row' alignSelf='flex-start' alignItems='center'>
@@ -282,6 +282,7 @@ export default function BudgetPage() {
                                 </IconButton>
                                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                                     <DatePicker
+                                        sx={{flexGrow: 1}}
                                         views={['year', 'month']}
                                         value={selectedMonth}
                                         onChange={handleMonthChange}

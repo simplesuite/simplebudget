@@ -8,7 +8,7 @@ import { Switch } from "@mui/material";
 import { useGlobalStore, dialogPaperStyles } from "../store/globalStore";
 import { useTableStore } from "../store/tableStore";
 import { useModalStore } from "../store/modalStore";
-import { supaALLsections, supaCategories } from './extras/api_functions'
+import { supaALLsections } from './extras/api_functions'
 import { useNavigate } from "react-router-dom";
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -41,6 +41,8 @@ import ExportToCSV from './modals/ExportToCSV'
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useIsOffline } from "./extras/OfflineAlert";
+import BugReportIcon from '@mui/icons-material/BugReport';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
 import CloseIcon from '@mui/icons-material/Close';
 import IconButton from "@mui/material/IconButton";
 import DialogActions from '@mui/material/DialogActions';
@@ -51,7 +53,6 @@ export default function SettingsPage() {
     const offline = useIsOffline();
     const theme = useTheme();
     const bigger = useMediaQuery(theme.breakpoints.up('sm'));
-    const sectionsArray = useTableStore(s => s.sections);
     const [slideCheck, setSlideCheck] = React.useState(false);
     const areYouSureOpen = useModalStore(s => s.areYouSure);
     const setAreYouSureOpen = useModalStore(s => s.setAreYouSure);
@@ -76,7 +77,7 @@ export default function SettingsPage() {
     const [checkoutLoading, setCheckoutLoading] = React.useState(false)
     const [billingLoading, setBillingLoading] = React.useState(false)
     const { entitlement, subscriptionState, loading: entitlementLoading } = useEntitlement()
-    const hasPro = subscriptionState !== 'free'
+    const hasPro = entitlementLoading || subscriptionState !== 'free'
     const handleUpgrade = async () => {
         setCheckoutLoading(true)
         try {
@@ -230,173 +231,208 @@ export default function SettingsPage() {
     return (
         <>
             <Box display='flex' flexDirection='column' alignItems='center'>
-                <Stack spacing={2} alignItems="stretch" sx={{ maxWidth: 400, width: '100%' }}>
-                    <Typography sx={{ alignSelf: 'flex-start' }} color='text.secondary' variant='h6'>Settings</Typography>
-                    <Paper elevation={4} sx={{ width: '100%', borderRadius: 3 }}>
-                        <List>
-                            <ListItem disablePadding>
-                                <Typography color='text.secondary' variant='h6' sx={{ fontWeight: '600', ml: 1 }}>General</Typography>
-                            </ListItem>
-                            <Divider />
-                            <ListItem disablePadding>
-                                <ListItemButton onClick={handleListThemeClick}>
-                                    <ListItemIcon>
-                                        <DarkModeIcon />
-                                    </ListItemIcon>
-                                    <ListItemText primary="Dark Mode" />
-                                    <Switch sx={{ ml: 1 }} size='small' checked={slideCheck} onChange={handleThemeClick} />
-                                </ListItemButton>
-                            </ListItem>
-                        </List>
-                    </Paper>
-                    <Paper elevation={4} sx={{ width: '100%', borderRadius: 3 }}>
-                        <List>
-                            <ListItem disablePadding>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 1 }}>
-                                    <Typography color='text.secondary' variant='h6' sx={{ fontWeight: '600' }}>Subscription</Typography>
-                                    {!entitlementLoading && (
-                                        subscriptionState === 'active' ? (
-                                            <Chip label="Pro" size="small" color="success" />
-                                        ) : subscriptionState === 'trialing' ? (
-                                            <Chip label="Trial" size="small" color="info" />
-                                        ) : subscriptionState === 'canceling' ? (
-                                            <Chip label="Canceling" size="small" color="warning" />
-                                        ) : (
-                                            <Chip label="Free" size="small" variant="outlined" />
-                                        )
-                                    )}
-                                </Box>
-                            </ListItem>
-                            <Divider />
-                            {subscriptionState === 'free' && (
-                                <ListItem disablePadding>
-                                    <ListItemButton onClick={handleUpgrade} disabled={offline || checkoutLoading}>
-                                        <ListItemIcon>
-                                            <StarIcon />
-                                        </ListItemIcon>
-                                        <ListItemText
-                                            primary="Upgrade to Pro"
-                                            secondary={checkoutLoading ? "Redirecting to checkout..." : "Unlock premium features"}
-                                        />
-                                    </ListItemButton>
-                                </ListItem>
+                <Stack spacing={2} alignItems="stretch" sx={{ maxWidth: 600, width: '100%' }}>
+
+                    {/* Account & Subscription */}
+                    <Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, flexWrap: 'wrap' }}>
+                            <Typography color='text.secondary' variant='subtitle2' sx={{ fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>{currentUserDetails.fullName}</Typography>
+                            {!entitlementLoading && (
+                                subscriptionState === 'active' ? (
+                                    <Chip label="Pro" size="small" color="success" />
+                                ) : subscriptionState === 'trialing' ? (
+                                    <Chip label="Trial" size="small" color="info" />
+                                ) : subscriptionState === 'canceling' ? (
+                                    <Chip label="Canceling" size="small" color="warning" />
+                                ) : (
+                                    <Chip label="Free" size="small" variant="outlined" />
+                                )
                             )}
-                            {subscriptionState === 'canceling' && (
-                                <>
-                                    <ListItem disablePadding sx={{ px: 2, py: 1 }}>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Your plan is active until {entitlement?.current_period_end
-                                                ? new Date(entitlement.current_period_end).toLocaleDateString()
-                                                : 'end of billing period'}
-                                        </Typography>
+                        </Box>
+                        <Paper elevation={4} sx={{ width: '100%', borderRadius: 3 }}>
+                            <List>
+                                {entitlementLoading ? (
+                                    <ListItem sx={{ justifyContent: 'center', py: 2 }}>
+                                        <Typography variant="body2" color="text.secondary">Loading...</Typography>
                                     </ListItem>
-                                    <Divider />
-                                </>
-                            )}
-                            {subscriptionState !== 'free' && (
+                                ) : (
+                                    <>
+                                        {subscriptionState === 'free' && (
+                                            <>
+                                                <ListItem disablePadding>
+                                                    <ListItemButton onClick={handleUpgrade} disabled={offline || checkoutLoading}>
+                                                        <ListItemIcon>
+                                                            <StarIcon />
+                                                        </ListItemIcon>
+                                                        <ListItemText
+                                                            primary="Upgrade to Pro"
+                                                            secondary={checkoutLoading ? "Redirecting to checkout..." : "Unlock premium features"}
+                                                        />
+                                                    </ListItemButton>
+                                                </ListItem>
+                                                <Divider />
+                                            </>
+                                        )}
+                                        {subscriptionState === 'canceling' && (
+                                            <>
+                                                <ListItem disablePadding sx={{ px: 2, py: 1 }}>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        Your plan is active until {entitlement?.current_period_end
+                                                            ? new Date(entitlement.current_period_end).toLocaleDateString()
+                                                            : 'end of billing period'}
+                                                    </Typography>
+                                                </ListItem>
+                                                <Divider />
+                                            </>
+                                        )}
+                                        {subscriptionState !== 'free' && (
+                                            <>
+                                                <ListItem disablePadding>
+                                                    <ListItemButton onClick={handleManageBilling} disabled={offline || billingLoading}>
+                                                        <ListItemIcon>
+                                                            <ManageAccountsIcon />
+                                                        </ListItemIcon>
+                                                        <ListItemText
+                                                            primary="Manage Subscription"
+                                                            secondary={billingLoading ? "Redirecting to billing portal..." : "Update payment, cancel, or view invoices"}
+                                                        />
+                                                    </ListItemButton>
+                                                </ListItem>
+                                                <Divider />
+                                            </>
+                                        )}
+                                    </>
+                                )}
                                 <ListItem disablePadding>
-                                    <ListItemButton onClick={handleManageBilling} disabled={offline || billingLoading}>
+                                    <ListItemButton onClick={() => setQrOpen(true)} disabled={!hasPro}>
                                         <ListItemIcon>
-                                            <ManageAccountsIcon />
+                                            {hasPro ? <QrCodeIcon /> : <LockIcon color="disabled" />}
                                         </ListItemIcon>
                                         <ListItemText
-                                            primary="Manage Subscription"
-                                            secondary={billingLoading ? "Redirecting to billing portal..." : "Update payment, cancel, or view invoices"}
+                                            primary="Show My QR Code"
+                                            secondary={hasPro ? "For sharing budgets" : "Pro feature"}
                                         />
+                                        {!hasPro && <Chip label="Pro" size="small" variant="outlined" sx={{ ml: 1 }} />}
                                     </ListItemButton>
                                 </ListItem>
-                            )}
-                        </List>
-                    </Paper>
-                    <Paper elevation={4} sx={{ width: '100%', borderRadius: 3 }}>
-                        <List>
-                            <ListItem disablePadding>
-                                <Typography color='text.secondary' variant='h6' sx={{ fontWeight: '600', ml: 1 }}>{'Budget: ' + currentBudgetDetails?.budgetName}</Typography>
-                            </ListItem>
-                            <Divider />
-                            <ListItem disablePadding>
-                                <ListItemButton onClick={() => setSelectBudgetOpen(true)}>
-                                    <ListItemIcon>
-                                        <ListAltIcon />
-                                    </ListItemIcon>
-                                    <ListItemText primary="Switch Budgets" />
-                                </ListItemButton>
-                            </ListItem>
-                            <Divider />
-                            <ListItem disablePadding>
-                                <ListItemButton onClick={() => setExportToCSV(true)} disabled={offline || !hasPro}>
-                                    <ListItemIcon>
-                                        {hasPro ? <FileDownloadIcon /> : <LockIcon color="disabled" />}
-                                    </ListItemIcon>
-                                    <ListItemText
-                                        primary="Export Data to CSV"
-                                        secondary={!hasPro ? "Pro feature" : undefined}
-                                    />
-                                    {!hasPro && <Chip label="Pro" size="small" variant="outlined" sx={{ ml: 1 }} />}
-                                </ListItemButton>
-                            </ListItem>
-                            <Divider />
-                            <ListItem disablePadding>
-                                <ListItemButton onClick={() => setShareBudgetOpen(true)} disabled={offline || !hasPro}>
-                                    <ListItemIcon>
-                                        {hasPro ? <ShareIcon /> : <LockIcon color="disabled" />}
-                                    </ListItemIcon>
-                                    <ListItemText
-                                        primary="Share Budget"
-                                        secondary={!hasPro ? "Pro feature" : undefined}
-                                    />
-                                    {!hasPro && <Chip label="Pro" size="small" variant="outlined" sx={{ ml: 1 }} />}
-                                </ListItemButton>
-                            </ListItem>
-                            <Divider />
-                            <ListItem disablePadding>
-                                <ListItemButton onClick={handleDoubleCheck} disabled={offline}>
-                                    <ListItemIcon>
-                                        <DeleteIcon />
-                                    </ListItemIcon>
-                                    <ListItemText primary="Delete Budget" />
-                                </ListItemButton>
-                            </ListItem>
-                        </List>
-                    </Paper>
-                    <Paper elevation={4} sx={{ width: '100%', borderRadius: 3 }}>
-                        <List>
-                            <ListItem disablePadding>
-                                <Typography color='text.secondary' variant='h6' sx={{ fontWeight: '600', ml: 1 }}>Account: {currentUserDetails.fullName}</Typography>
-                            </ListItem>
-                            <Divider />
-                            <ListItem disablePadding>
-                                <ListItemButton onClick={() => setQrOpen(true)} disabled={!hasPro}>
-                                    <ListItemIcon>
-                                        {hasPro ? <QrCodeIcon /> : <LockIcon color="disabled" />}
-                                    </ListItemIcon>
-                                    <ListItemText
-                                        primary="Show My QR Code"
-                                        secondary={hasPro ? "For sharing budgets" : "Pro feature"}
-                                    />
-                                    {!hasPro && <Chip label="Pro" size="small" variant="outlined" sx={{ ml: 1 }} />}
-                                </ListItemButton>
-                            </ListItem>
-                            <Divider />
-                            <ListItem disablePadding>
-                                <ListItemButton onClick={() => setOpenChangePassword(true)} disabled={offline}>
-                                    <ListItemIcon>
-                                        <LockResetIcon />
-                                    </ListItemIcon>
-                                    <ListItemText primary="Change Password" />
-                                </ListItemButton>
-                            </ListItem>
-                            <Divider />
-                            <ListItem disablePadding>
-                                <ListItemButton onClick={fnLogout} disabled={offline}>
-                                    <ListItemIcon>
-                                        <LogoutIcon />
-                                    </ListItemIcon>
-                                    <ListItemText primary="Logout" />
-                                </ListItemButton>
-                            </ListItem>
-                        </List>
-                    </Paper>
+                                <Divider />
+                                <ListItem disablePadding>
+                                    <ListItemButton onClick={() => setOpenChangePassword(true)} disabled={offline}>
+                                        <ListItemIcon>
+                                            <LockResetIcon />
+                                        </ListItemIcon>
+                                        <ListItemText primary="Change Password" />
+                                    </ListItemButton>
+                                </ListItem>
+                                <Divider />
+                                <ListItem disablePadding>
+                                    <ListItemButton onClick={fnLogout} disabled={offline}>
+                                        <ListItemIcon>
+                                            <LogoutIcon />
+                                        </ListItemIcon>
+                                        <ListItemText primary="Logout" />
+                                    </ListItemButton>
+                                </ListItem>
+                            </List>
+                        </Paper>
+                    </Box>
+
+                    {/* Budget */}
+                    <Box>
+                        <Typography color='text.secondary' variant='subtitle2' sx={{ fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, mb: 1 }}>{'Budget: ' + currentBudgetDetails?.budgetName}</Typography>
+                        <Paper elevation={4} sx={{ width: '100%', borderRadius: 3 }}>
+                            <List>
+                                <ListItem disablePadding>
+                                    <ListItemButton onClick={() => setSelectBudgetOpen(true)}>
+                                        <ListItemIcon>
+                                            <ListAltIcon />
+                                        </ListItemIcon>
+                                        <ListItemText primary="Switch Budgets" />
+                                    </ListItemButton>
+                                </ListItem>
+                                <Divider />
+                                <ListItem disablePadding>
+                                    <ListItemButton onClick={() => setExportToCSV(true)} disabled={offline || !hasPro}>
+                                        <ListItemIcon>
+                                            {hasPro ? <FileDownloadIcon /> : <LockIcon color="disabled" />}
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primary="Export Data to CSV"
+                                            secondary={!hasPro ? "Pro feature" : undefined}
+                                        />
+                                        {!hasPro && <Chip label="Pro" size="small" variant="outlined" sx={{ ml: 1 }} />}
+                                    </ListItemButton>
+                                </ListItem>
+                                <Divider />
+                                <ListItem disablePadding>
+                                    <ListItemButton onClick={() => setShareBudgetOpen(true)} disabled={offline || !hasPro}>
+                                        <ListItemIcon>
+                                            {hasPro ? <ShareIcon /> : <LockIcon color="disabled" />}
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primary="Share Budget"
+                                            secondary={!hasPro ? "Pro feature" : undefined}
+                                        />
+                                        {!hasPro && <Chip label="Pro" size="small" variant="outlined" sx={{ ml: 1 }} />}
+                                    </ListItemButton>
+                                </ListItem>
+                                <Divider />
+                                <ListItem disablePadding>
+                                    <ListItemButton onClick={handleDoubleCheck} disabled={offline}>
+                                        <ListItemIcon>
+                                            <DeleteIcon />
+                                        </ListItemIcon>
+                                        <ListItemText primary="Delete Budget" />
+                                    </ListItemButton>
+                                </ListItem>
+                            </List>
+                        </Paper>
+                    </Box>
+
+                    {/* Preferences */}
+                    <Box>
+                        <Typography color='text.secondary' variant='subtitle2' sx={{ fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, mb: 1 }}>Preferences</Typography>
+                        <Paper elevation={4} sx={{ width: '100%', borderRadius: 3 }}>
+                            <List>
+                                <ListItem disablePadding>
+                                    <ListItemButton onClick={handleListThemeClick}>
+                                        <ListItemIcon>
+                                            <DarkModeIcon />
+                                        </ListItemIcon>
+                                        <ListItemText primary="Dark Mode" />
+                                        <Switch sx={{ ml: 1 }} size='small' checked={slideCheck} onChange={handleThemeClick} />
+                                    </ListItemButton>
+                                </ListItem>
+                            </List>
+                        </Paper>
+                    </Box>
+
+                    {/* Support */}
+                    <Box>
+                        <Typography color='text.secondary' variant='subtitle2' sx={{ fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, mb: 1 }}>Support</Typography>
+                        <Paper elevation={4} sx={{ width: '100%', borderRadius: 3 }}>
+                            <List>
+                                <ListItem disablePadding>
+                                    <ListItemButton component="a" href="https://simplesuite.dev/guides" target="_blank" rel="noopener noreferrer">
+                                        <ListItemIcon>
+                                            <MenuBookIcon />
+                                        </ListItemIcon>
+                                        <ListItemText primary="Guides" />
+                                    </ListItemButton>
+                                </ListItem>
+                                <Divider />
+                                <ListItem disablePadding>
+                                    <ListItemButton component="a" href="https://github.com/simplesuite/simplebudget/issues" target="_blank" rel="noopener noreferrer">
+                                        <ListItemIcon>
+                                            <BugReportIcon />
+                                        </ListItemIcon>
+                                        <ListItemText primary="Report a Bug or Request a Feature" />
+                                    </ListItemButton>
+                                </ListItem>
+                            </List>
+                        </Paper>
+                    </Box>
+
                 </Stack>
             </Box>
             <ShareBudget />
