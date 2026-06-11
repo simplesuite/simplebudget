@@ -77,7 +77,7 @@ export async function redirectToCheckout(): Promise<void> {
         "create-checkout-session",
         {
             body: {
-                appKey: "simplebudget_test",
+                appKey: "simplebudget",
                 plan: "pro",
             },
         }
@@ -104,7 +104,7 @@ export async function redirectToBillingPortal(): Promise<void> {
         "create-billing-portal-session",
         {
             body: {
-                appKey: "simplebudget_test",
+                appKey: "simplebudget",
             },
         }
     );
