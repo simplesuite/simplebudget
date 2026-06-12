@@ -9,8 +9,6 @@
 
 A simple, mobile-first budget app for tracking income and expenses. Installable as a PWA on iOS and Android.
 
-**Live:** [simplebudget.vercel.app](https://simplebudget.vercel.app/)
-
 ## Features
 
 - Create and manage multiple budgets
