@@ -37,6 +37,8 @@ export default function CopyBudget() {
     const openCopyBudget = useModalStore(s => s.copyBudget)
     const setOpenCopyBudget = useModalStore(s => s.setCopyBudget)
     const currentBudget = useTableStore(s => s.currentBudgetAndMonth)
+    const setSections = useTableStore(s => s.setSections)
+    const setCategories = useTableStore(s => s.setCategories)
     const setSnackText = useGlobalStore(s => s.setSnackBarText);
     const setSnackSev = useGlobalStore(s => s.setSnackBarSeverity);
     const setSnackOpen = useGlobalStore(s => s.setSnackBarOpen);
@@ -102,8 +104,9 @@ export default function CopyBudget() {
             }
 
             let allCategories = await supaCategories(allSections.map(x => x.recordID))
+            let newCategories: any[] = []
             if (allCategories !== null) {
-                let newCategories = allCategories.map((row) => ({
+                newCategories = allCategories.map((row) => ({
                     recordID: uuidv4(),
                     //@ts-ignore
                     sectionID: newSectionArray[allSections.findIndex(x => x.recordID === row.sectionID)].recordID,
@@ -120,6 +123,15 @@ export default function CopyBudget() {
                     }
                 }
             }
+
+            // Update local state if the target month matches the currently viewed month
+            const targetMonth = dayjs(toMonth).format('MMMM')
+            const targetYear = Number(dayjs(toMonth).format('YYYY'))
+            if (currentBudget.month === targetMonth && currentBudget.year === targetYear) {
+                setSections((prev: any[]) => [...prev, ...newSectionArray])
+                setCategories((prev: any[]) => [...prev, ...newCategories])
+            }
+
             setLoadingOpen(false)
             setOpenCopyBudget(false)
             setSnackSev('success')
