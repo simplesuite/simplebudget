@@ -43,6 +43,11 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import { useIsOffline } from "./extras/OfflineAlert";
 import BugReportIcon from '@mui/icons-material/BugReport';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
+import IosShareIcon from '@mui/icons-material/IosShare';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import Alert from '@mui/material/Alert';
+import { useNotificationStore } from '../store/notificationStore';
+import { notificationsSupported, requestNotificationPermission } from '../lib/notifications';
 import CloseIcon from '@mui/icons-material/Close';
 import IconButton from "@mui/material/IconButton";
 import DialogActions from '@mui/material/DialogActions';
@@ -78,6 +83,70 @@ export default function SettingsPage() {
     const [billingLoading, setBillingLoading] = React.useState(false)
     const { entitlement, subscriptionState, loading: entitlementLoading } = useEntitlement()
     const hasPro = entitlementLoading || subscriptionState !== 'free'
+    const notificationsEnabled = useNotificationStore(s => s.enabled);
+    const setNotificationsEnabled = useNotificationStore(s => s.setEnabled);
+    const setNotificationsPrompted = useNotificationStore(s => s.setPrompted);
+    const showNotificationsSetting = notificationsSupported();
+
+    // Detect mismatch: app thinks notifications are enabled but system permission is off
+    const [permissionMismatch, setPermissionMismatch] = React.useState(false);
+    React.useEffect(() => {
+        const check = () => {
+            if (notificationsEnabled && notificationsSupported() && Notification.permission !== 'granted') {
+                setPermissionMismatch(true);
+            } else {
+                setPermissionMismatch(false);
+            }
+        };
+        check();
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') check();
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
+        return () => document.removeEventListener('visibilitychange', handleVisibility);
+    }, [notificationsEnabled]);
+
+    const handleNotificationsToggle = async () => {
+        if (!notificationsEnabled) {
+            const granted = await requestNotificationPermission();
+            if (granted) {
+                setNotificationsEnabled(true);
+                setNotificationsPrompted(true);
+                setSnackSev('success');
+                setSnackText('Notifications enabled');
+                setSnackOpen(true);
+            } else {
+                setSnackSev('warning');
+                setSnackText('Notification permission denied by browser');
+                setSnackOpen(true);
+            }
+        } else {
+            setNotificationsEnabled(false);
+            setSnackSev('success');
+            setSnackText('Notifications disabled');
+            setSnackOpen(true);
+        }
+    };
+
+    const handleFixPermission = async () => {
+        if (Notification.permission === 'denied') {
+            setSnackSev('info');
+            setSnackText('Please enable notifications in your device/browser settings');
+            setSnackOpen(true);
+        } else {
+            const granted = await requestNotificationPermission();
+            if (granted) {
+                setPermissionMismatch(false);
+                setSnackSev('success');
+                setSnackText('Notifications re-enabled!');
+                setSnackOpen(true);
+            } else {
+                setSnackSev('warning');
+                setSnackText('Permission denied — enable in device settings');
+                setSnackOpen(true);
+            }
+        }
+    };
     const handleUpgrade = async () => {
         setCheckoutLoading(true)
         try {
@@ -225,6 +294,30 @@ export default function SettingsPage() {
                 setSnackOpen(true)
             });
     }
+    const shareAppLink = async () => {
+        const appUrl = 'https://budget.simplesuite.dev';
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'SimpleBudget',
+                    text: 'Check out SimpleBudget - a simple budgeting app!',
+                    url: appUrl,
+                });
+            } catch (err: any) {
+                if (err.name !== 'AbortError') {
+                    await navigator.clipboard.writeText(appUrl);
+                    setSnackSev('success');
+                    setSnackText('App link copied to clipboard');
+                    setSnackOpen(true);
+                }
+            }
+        } else {
+            await navigator.clipboard.writeText(appUrl);
+            setSnackSev('success');
+            setSnackText('App link copied to clipboard');
+            setSnackOpen(true);
+        }
+    };
     React.useEffect(() => {
         window.scrollTo(0, 0)
     }, [])
@@ -403,6 +496,35 @@ export default function SettingsPage() {
                                         <Switch sx={{ ml: 1 }} size='small' checked={slideCheck} onChange={handleThemeClick} />
                                     </ListItemButton>
                                 </ListItem>
+                                {showNotificationsSetting && (
+                                    <>
+                                        <Divider />
+                                        <ListItem disablePadding>
+                                            <ListItemButton onClick={handleNotificationsToggle}>
+                                                <ListItemIcon>
+                                                    <NotificationsIcon />
+                                                </ListItemIcon>
+                                                <ListItemText primary="Transaction Notifications" secondary="Daily reminders for tomorrow's transactions" />
+                                                <Switch sx={{ ml: 1 }} size='small' checked={notificationsEnabled} onChange={handleNotificationsToggle} />
+                                            </ListItemButton>
+                                        </ListItem>
+                                        {permissionMismatch && (
+                                            <ListItem>
+                                                <Alert
+                                                    severity="warning"
+                                                    sx={{ width: '100%', borderRadius: 2 }}
+                                                    action={
+                                                        <Button color="inherit" size="small" onClick={handleFixPermission}>
+                                                            {Notification.permission === 'denied' ? 'How to fix' : 'Allow'}
+                                                        </Button>
+                                                    }
+                                                >
+                                                    Notifications are blocked at the system level
+                                                </Alert>
+                                            </ListItem>
+                                        )}
+                                    </>
+                                )}
                             </List>
                         </Paper>
                     </Box>
@@ -427,6 +549,15 @@ export default function SettingsPage() {
                                             <BugReportIcon />
                                         </ListItemIcon>
                                         <ListItemText primary="Report a Bug or Request a Feature" />
+                                    </ListItemButton>
+                                </ListItem>
+                                <Divider />
+                                <ListItem disablePadding>
+                                    <ListItemButton onClick={shareAppLink}>
+                                        <ListItemIcon>
+                                            <IosShareIcon />
+                                        </ListItemIcon>
+                                        <ListItemText primary="Share App Link" secondary="Share simpleBudget with others" />
                                     </ListItemButton>
                                 </ListItem>
                             </List>

@@ -51,6 +51,7 @@ import { usePwaStore } from "./store/pwaStore";
 import { hasSupabaseSession, supabase } from "./lib/supabase";
 import { initOfflineSync } from "./lib/offlineSync";
 import { ensureUserRecord } from "./components/extras/ensureUserRecord";
+import { checkAndNotify } from "./lib/notifications";
 
 const fabStyle = {
   position: 'fixed',
@@ -121,6 +122,32 @@ export default function App() {
   React.useEffect(() => {
     const cleanup = initOfflineSync();
     return cleanup;
+  }, []);
+
+  // Check for transactions due tomorrow and send a grouped notification (once per day)
+  React.useEffect(() => {
+    try {
+      const cachedTransactions = JSON.parse(localStorage.getItem('cachedTransactions') || '[]');
+      if (cachedTransactions.length > 0) {
+        checkAndNotify(cachedTransactions);
+      }
+    } catch (err) {
+      console.warn('Notification check failed on mount:', err);
+    }
+
+    // Also check when the app regains visibility (covers next-day scenario)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        try {
+          const transactions = JSON.parse(localStorage.getItem('cachedTransactions') || '[]');
+          if (transactions.length > 0) checkAndNotify(transactions);
+        } catch (err) {
+          console.warn('Notification check failed on visibility change:', err);
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, []);
 
   // Re-fetch budget data when coming back online
