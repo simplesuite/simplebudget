@@ -1,65 +1,93 @@
 <p align="center">
-  <img width="250" height="250" alt="simplebudget-normalized" src="https://github.com/user-attachments/assets/87011bf1-c892-404a-95d5-e9736e8aafb7" />
-
+  <img src="public/simplebudget.png" alt="simpleBudget screenshot" width="250" />
 </p>
 
-# simpleBudget
+<h1 align="center">simpleBudget</h1>
 
-[![Made with Supabase](https://supabase.com/badge-made-with-supabase.svg)](https://supabase.com)
+<p align="center">
+  A simple, open-source budgeting app built with React, TypeScript, and Supabase. Track expenses, share budgets, and manage your money.
+</p>
 
-A simple, mobile-first budget app for tracking income and expenses. Installable as a PWA on iOS and Android.
+<p align="center">
+  <a href="https://github.com/simplesuite/simplebudget/blob/main/LICENSE"><img src="https://img.shields.io/github/license/simplesuite/simplebudget" alt="License" /></a>
+  <a href="https://github.com/simplesuite/simplebudget/stargazers"><img src="https://img.shields.io/github/stars/simplesuite/simplebudget" alt="Stars" /></a>
+  <a href="https://github.com/simplesuite/simplebudget/issues"><img src="https://img.shields.io/github/issues/simplesuite/simplebudget" alt="Issues" /></a>
+  <a href="https://supabase.com"><img src="https://supabase.com/badge-made-with-supabase.svg" alt="Made with Supabase" /></a>
+</p>
+
+---
+
+## What is simpleBudget?
+
+simpleBudget is a free, open-source alternative to YNAB and Mint for personal budgeting. It's a mobile-first progressive web app (PWA) you can install on iOS, Android, or desktop — or self-host with Docker.
+
+Built for people who want a straightforward way to manage their money without subscriptions or ads.
 
 ## Features
 
-- Create and manage multiple budgets
-- Organize spending with sections and categories
-- Track transactions with split-transaction support
-- Share budgets with other users via QR code
-- Analytics with pie charts for income and expense breakdown
-- Export data to CSV
-- Dark/light theme
-- Offline-capable PWA with auto-update prompts
-- Works great on mobile — designed for daily use
+- **Multiple budgets** — Create and switch between separate budgets
+- **Sections & categories** — Organize spending however you want
+- **Transaction tracking** — Log income and expenses with split-transaction support
+- **Budget sharing** — Share budgets with other users via QR code
+- **Analytics** — Pie charts for income and expense breakdown
+- **Copy budgets** — Duplicate a month's budget outline to another month
+- **CSV export** — Download your data anytime
+- **Notifications** — Daily browser reminders for upcoming transactions
+- **Dark & light mode** — Respects your preference
+- **Offline support** — Works without internet, syncs when reconnected
+- **Installable PWA** — Add to home screen on any device
+- **Self-hostable** — Run on your own server via [simplesuite-selfhost](https://github.com/simplesuite/simplesuite-selfhost)
+
+## An Open-Source Alternative To
+
+- EveryDollar
+- YNAB (You Need a Budget)
+- Mint
+- Goodbudget
+- Copilot Money
 
 ## Tech Stack
 
-- **React 19** with TypeScript
-- **Vite** for builds and dev server
-- **MUI 7** (Material UI) for components
-- **Zustand** for state management
-- **Supabase** for auth, database, and real-time
-- **react-router-dom v7** for routing
-- **vite-plugin-pwa** for service worker and installability
-- **Vitest** for unit testing
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19, TypeScript, Vite |
+| UI | MUI 7 (Material UI) |
+| State | Zustand |
+| Backend | Supabase (auth, database, real-time) |
+| Routing | react-router-dom v7 |
+| PWA | vite-plugin-pwa |
+| Testing | Vitest |
+| Deployment | Vercel |
 
 ## Getting Started
 
+### Quick Start (Development)
+
 ```bash
+# Clone the repo
+git clone https://github.com/simplesuite/simplebudget.git
+cd simplebudget
+
 # Install dependencies
 npm install
 
 # Start dev server (http://localhost:3000)
 npm run dev
-
-# Run tests
-npm test
-
-# Production build
-npm run build
-
-# Preview production build locally
-npm run preview
 ```
 
-## Environment Variables (optional)
+## Self-Hosting
 
-The app works out of the box with the default Supabase project. To use your own:
+To self-host simpleBudget (along with the other simpleSuite apps and the Supabase backend), see the **[simplesuite-selfhost](https://github.com/simplesuite/simplesuite-selfhost)** repository. It has everything needed to run each frontend and the backend on your own infrastructure.
+
+### Environment Variables
+
+The app works out of the box with the default Supabase project. To connect your own:
 
 ```bash
 cp .env.example .env.local
 ```
 
-Then set `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` in `.env.local`.
+Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` in `.env.local`.
 
 ## Project Structure
 
@@ -67,17 +95,26 @@ Then set `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` in `.env.local`.
 src/
 ├── components/
 │   ├── modals/          # Dialog components (AddTransaction, EditCategory, etc.)
-│   ├── subcomponents/   # Shared UI (AppToolbar, AreYouSure, UpdatePrompt, etc.)
+│   ├── subcomponents/   # Shared UI (AppToolbar, BudgetSection, etc.)
 │   └── extras/          # Utilities (api_functions, GrabBudgetData, etc.)
-├── store/               # Zustand stores (globalStore, modalStore, tableStore)
-├── lib/                 # Supabase client
+├── store/               # Zustand stores (globalStore, tableStore, notificationStore)
+├── lib/                 # Supabase client, notifications, offline sync
 └── test/                # Unit tests
 ```
 
-## Deployment
+## Scripts
 
-Deployed on [Vercel](https://vercel.com). Push to the main branch to trigger a deploy.
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Production build |
+| `npm run preview` | Preview production build locally |
+| `npm test` | Run unit tests |
+
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
-See [LICENSE](LICENSE).
+This project is licensed under the [GNU AGPL v3](LICENSE).
