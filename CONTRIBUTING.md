@@ -1,4 +1,4 @@
-# Contributing to simpleTracker
+# Contributing to simpleBudget
 
 Thanks for your interest in contributing! This document covers the basics for getting started.
 
@@ -50,7 +50,7 @@ You'll need Node.js 18+ and npm installed.
 
 ## Reporting Bugs
 
-Use the [bug report template](https://github.com/jbrow4/simpletracker/issues/new?template=bug_report.md) to file issues. Include steps to reproduce, expected behavior, and screenshots if applicable.
+Use the [bug report template](https://github.com/jbrow4/simplebudget/issues/new?template=bug_report.md) to file issues. Include steps to reproduce, expected behavior, and screenshots if applicable.
 
 ## Code of Conduct
 
