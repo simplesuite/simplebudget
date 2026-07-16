@@ -47,9 +47,9 @@ export async function verifyConnectivity(): Promise<boolean> {
         const timeout = setTimeout(() => controller.abort(), 5000);
 
         const response = await fetch(
-            `${SUPABASE_URL}/rest/v1/`,
+            `${SUPABASE_URL}/auth/v1/health`,
             {
-                method: 'HEAD',
+                method: 'GET',
                 headers: {
                     'apikey': SUPABASE_KEY,
                 },

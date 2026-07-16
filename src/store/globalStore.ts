@@ -5,6 +5,41 @@ import { getSupabaseStorageKey } from "../lib/supabase";
 export const primaryMain = '#4c809e';
 export const secondaryMain = '#D6A058';
 
+/** iOS-style switch overrides */
+const switchOverrides = {
+    MuiSwitch: {
+        styleOverrides: {
+            root: {
+                width: 42,
+                height: 24,
+                padding: 0,
+            },
+            switchBase: {
+                padding: 2,
+                '&.Mui-checked': {
+                    transform: 'translateX(18px)',
+                    color: '#fff',
+                    '& + .MuiSwitch-track': {
+                        opacity: 1,
+                        backgroundColor: primaryMain,
+                    },
+                },
+            },
+            thumb: {
+                width: 20,
+                height: 20,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+            },
+            track: {
+                borderRadius: 12,
+                opacity: 1,
+                backgroundColor: 'rgba(150,150,150,0.3)',
+                transition: 'background-color 0.2s ease',
+            },
+        },
+    },
+};
+
 export const themes = {
     darkTheme: createTheme({
         palette: {
@@ -16,6 +51,7 @@ export const themes = {
             MuiAutocomplete: {
                 styleOverrides: { popper: { zIndex: 1500 } },
             },
+            ...switchOverrides,
         },
     }),
     lightTheme: createTheme({
@@ -28,6 +64,7 @@ export const themes = {
             MuiAutocomplete: {
                 styleOverrides: { popper: { zIndex: 1500 } },
             },
+            ...switchOverrides,
         },
     }),
 };

@@ -330,6 +330,8 @@ export default function App() {
             <Toolbar /><Outlet />
           </Box>
           <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} elevation={3}>
+            {matches ? null : <Fab color='secondary' sx={{ alignSelf: 'center', position: 'absolute', zIndex: 1, left: '50%', transform: 'translateX(-50%)', bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))' }} size="medium"
+              onClick={() => setAddNewTransaction(true)}><AddIcon /></Fab>}
             <BottomNavigation
               showLabels
               value={tabValue}
@@ -339,8 +341,6 @@ export default function App() {
               }}>
               <BottomNavigationAction label="Budget" value='/budget' component={RouterLink} to="budget" icon={<DashboardIcon />} />
               <BottomNavigationAction label="Transactions" value='/transactions' component={RouterLink} to="transactions" icon={<Badge badgeContent={unCategorized} color="secondary"><PaidIcon /></Badge>} />
-              {matches ? null : <Fab color='secondary' sx={{ alignSelf: 'center', position: 'absolute', mb: 9 }} size="medium"
-                onClick={() => setAddNewTransaction(true)}><AddIcon /></Fab>}
               <BottomNavigationAction label="Analytics" value='/analytics' component={RouterLink} to="analytics" icon={<AssessmentIcon />} />
               <BottomNavigationAction label="Settings" value='/settings' component={RouterLink} to="settings" icon={<SettingsIcon />} />
             </BottomNavigation>

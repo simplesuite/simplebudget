@@ -296,14 +296,14 @@ export default function SettingsPage() {
                         <Divider sx={{ mb: 2 }} />
                         <Stack direction="row" spacing={1.5}>
                             <Button
-                                variant="outlined" size="small" startIcon={<QrCodeIcon />}
+                                variant="outlined" startIcon={<QrCodeIcon />}
                                 onClick={() => setQrOpen(true)} disabled={!hasPro}
                                 sx={{ textTransform: 'none', borderRadius: 2, flex: 1 }}
                             >
                                 My QR Code
                             </Button>
                             <Button
-                                variant="outlined" size="small" startIcon={<LogoutIcon />}
+                                variant="outlined" startIcon={<LogoutIcon />}
                                 onClick={fnLogout} disabled={offline}
                                 color="error"
                                 sx={{ textTransform: 'none', borderRadius: 2, flex: 1 }}
@@ -329,7 +329,7 @@ export default function SettingsPage() {
                                 <Typography variant="caption" color="text.secondary">Unlock exports, sharing & more</Typography>
                             </Box>
                             <Button
-                                variant="contained" size="small" onClick={handleUpgrade}
+                                variant="contained" onClick={handleUpgrade}
                                 disabled={offline || checkoutLoading}
                                 sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
                             >
@@ -345,53 +345,9 @@ export default function SettingsPage() {
                         </Alert>
                     )}
 
-                    {/* ─── Budget Card ─── */}
-                    <Paper elevation={4} sx={{ borderRadius: 4, p: 3 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2.5, textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary', fontSize: '0.7rem' }}>
-                            {'Budget: ' + (currentBudgetDetails?.budgetName || '')}
-                        </Typography>
-
-                        <Stack spacing={1.5}>
-                            <Button
-                                variant="outlined" fullWidth startIcon={<ListAltIcon />}
-                                color="primary"
-                                onClick={() => setSelectBudgetOpen(true)}
-                                sx={{ justifyContent: 'flex-start', textTransform: 'none', borderRadius: 2, py: 1.2 }}
-                            >
-                                Switch Budgets
-                            </Button>
-                            <Button
-                                variant="outlined" fullWidth startIcon={hasPro ? <DownloadIcon /> : <LockIcon />}
-                                color="primary"
-                                onClick={() => setExportToCSV(true)} disabled={offline || !hasPro}
-                                sx={{ justifyContent: 'flex-start', textTransform: 'none', borderRadius: 2, py: 1.2 }}
-                            >
-                                Export Data to CSV
-                                {!hasPro && <Chip label="Pro" size="small" variant="outlined" sx={{ ml: 'auto' }} />}
-                            </Button>
-                            <Button
-                                variant="outlined" fullWidth startIcon={hasPro ? <ShareIcon /> : <LockIcon />}
-                                color="primary"
-                                onClick={() => setShareBudgetOpen(true)} disabled={offline || !hasPro}
-                                sx={{ justifyContent: 'flex-start', textTransform: 'none', borderRadius: 2, py: 1.2 }}
-                            >
-                                Share Budget
-                                {!hasPro && <Chip label="Pro" size="small" variant="outlined" sx={{ ml: 'auto' }} />}
-                            </Button>
-                            <Button
-                                variant="outlined" fullWidth startIcon={<DeleteIcon />}
-                                color="error"
-                                onClick={handleOpenDeleteDialog} disabled={offline}
-                                sx={{ justifyContent: 'flex-start', textTransform: 'none', borderRadius: 2, py: 1.2 }}
-                            >
-                                Delete Budget
-                            </Button>
-                        </Stack>
-                    </Paper>
-
                     {/* ─── Preferences Card ─── */}
                     <Paper elevation={4} sx={{ borderRadius: 4, p: 3 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2.5, textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary', fontSize: '0.7rem' }}>
+                        <Typography color="text.secondary" variant="subtitle2" sx={{ fontWeight: 800, mb: 2.5, textTransform: 'uppercase' }}>
                             Preferences
                         </Typography>
 
@@ -424,7 +380,7 @@ export default function SettingsPage() {
                                         severity="warning"
                                         sx={{ borderRadius: 2, mt: 2 }}
                                         action={
-                                            <Button color="inherit" size="small" onClick={handleFixPermission}>
+                                            <Button color="inherit" onClick={handleFixPermission}>
                                                 {Notification.permission === 'denied' ? 'How to fix' : 'Allow'}
                                             </Button>
                                         }
@@ -439,7 +395,7 @@ export default function SettingsPage() {
                     {/* ─── Account Card ─── */}
                     <Paper elevation={4} sx={{ borderRadius: 4, p: 3 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary', fontSize: '0.7rem' }}>
+                            <Typography color="text.secondary" variant="subtitle2" sx={{ fontWeight: 800, textTransform: 'uppercase' }}>
                                 Account
                             </Typography>
                             <Chip
@@ -472,34 +428,78 @@ export default function SettingsPage() {
                         </Stack>
                     </Paper>
 
+                    {/* ─── Budget Card ─── */}
+                    <Paper elevation={4} sx={{ borderRadius: 4, p: 3 }}>
+                        <Typography color="text.secondary" variant="subtitle2" sx={{ fontWeight: 800, mb: 2.5, textTransform: 'uppercase' }}>
+                            {'Budget: ' + (currentBudgetDetails?.budgetName || '')}
+                        </Typography>
+
+                        <Stack spacing={1.5}>
+                            <Button
+                                variant="outlined" fullWidth startIcon={<ListAltIcon />}
+                                color="secondary"
+                                onClick={() => setSelectBudgetOpen(true)}
+                                sx={{ justifyContent: 'flex-start', textTransform: 'none', borderRadius: 2, py: 1.2 }}
+                            >
+                                Switch Budgets
+                            </Button>
+                            <Button
+                                variant="outlined" fullWidth startIcon={hasPro ? <DownloadIcon /> : <LockIcon />}
+                                color="secondary"
+                                onClick={() => setExportToCSV(true)} disabled={offline || !hasPro}
+                                sx={{ justifyContent: 'flex-start', textTransform: 'none', borderRadius: 2, py: 1.2 }}
+                            >
+                                Export Data to CSV
+                                {!hasPro && <Chip label="Pro" size="small" variant="outlined" sx={{ ml: 'auto' }} />}
+                            </Button>
+                            <Button
+                                variant="outlined" fullWidth startIcon={hasPro ? <ShareIcon /> : <LockIcon />}
+                                color="secondary"
+                                onClick={() => setShareBudgetOpen(true)} disabled={offline || !hasPro}
+                                sx={{ justifyContent: 'flex-start', textTransform: 'none', borderRadius: 2, py: 1.2 }}
+                            >
+                                Share Budget
+                                {!hasPro && <Chip label="Pro" size="small" variant="outlined" sx={{ ml: 'auto' }} />}
+                            </Button>
+                            <Button
+                                variant="outlined" fullWidth startIcon={<DeleteIcon />}
+                                color="error"
+                                onClick={handleOpenDeleteDialog} disabled={offline}
+                                sx={{ justifyContent: 'flex-start', textTransform: 'none', borderRadius: 2, py: 1.2 }}
+                            >
+                                Delete Budget
+                            </Button>
+                        </Stack>
+                    </Paper>
+
                     {/* ─── Support Card ─── */}
                     <Paper elevation={4} sx={{ borderRadius: 4, p: 3 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2.5, textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary', fontSize: '0.7rem' }}>
+                        <Typography color="text.secondary" variant="subtitle2" sx={{ fontWeight: 800, mb: 2.5, textTransform: 'uppercase' }}>
                             Support
                         </Typography>
 
-                        <Stack direction="row" spacing={1.5} sx={{ flexWrap: 'wrap', gap: 1.5 }}>
+                        <Stack direction={bigger ? "row" : "column"} spacing={1.5}>
                             <Button
                                 color="primary"
-                                variant="outlined" size="small" startIcon={<MenuBookIcon />}
+                                variant="outlined" startIcon={<MenuBookIcon />}
                                 component="a" href="https://simplesuite.dev/guides" target="_blank" rel="noopener noreferrer"
-                                sx={{ textTransform: 'none', borderRadius: 2, textDecoration: 'none' }}
+                                sx={{ textTransform: 'none', textDecoration: 'none' }}
                             >
                                 Guides
                             </Button>
                             <Button
                                 color="primary"
-                                variant="outlined" size="small" startIcon={<BugReportIcon />}
+                                variant="outlined" startIcon={<BugReportIcon />}
                                 component="a" href="https://github.com/simplesuite/simplebudget/issues" target="_blank" rel="noopener noreferrer"
-                                sx={{ textTransform: 'none', borderRadius: 2, textDecoration: 'none' }}
+                                sx={{ textTransform: 'none', textDecoration: 'none' }}
                             >
                                 Report Bug
                             </Button>
                             <Button
                                 color="primary"
-                                variant="outlined" size="small" startIcon={<IosShareIcon />}
+                                variant="outlined" startIcon={<IosShareIcon />}
                                 onClick={shareAppLink}
-                                sx={{ textTransform: 'none', borderRadius: 2 }}
+                                sx={{ textTransform: 'none' }}
                             >
                                 Share App
                             </Button>
