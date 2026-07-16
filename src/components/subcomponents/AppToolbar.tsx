@@ -30,7 +30,7 @@ export default function AppToolbar() {
                 sx={{
                     width: '100%',
                     paddingTop: 'env(safe-area-inset-top, 0px)',
-                    backdropFilter: 'blur(12px)',
+                    backdropFilter: 'blur(5px)',
                     backgroundColor: currentTheme === 'dark'
                         ? 'rgba(18, 18, 18, 0.7)'
                         : 'rgba(255, 255, 255, 0.7)',
