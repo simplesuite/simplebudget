@@ -28,7 +28,7 @@ const formatter = new Intl.NumberFormat('en-US', {
 const COLORS = ['#4c809e', '#D6A058', '#6bbf8a', '#e07b7b', '#9b7fd4', '#e0a84c', '#5cc2c7', '#d4708f', '#8aad5e', '#c9884c'];
 
 // --- This Month Tab ---
-function ThisMonthTab() {
+function ThisMonthTab({ hasPro }: { hasPro: boolean }) {
     const categoriesArray = useTableStore(s => s.categories);
     const sectionsArray = useTableStore(s => s.sections);
     const transactionsArray = useTableStore(s => s.transactions);
@@ -51,18 +51,6 @@ function ThisMonthTab() {
         }))
         .filter(d => d.value > 0)
         .sort((a, b) => b.value - a.value);
-
-    const barData = sectionsArray
-        .filter(s => s.sectionType === 'expense')
-        .map(s => {
-            const cats = categoriesArray.filter(c => c.sectionID === s.recordID);
-            const budgeted = cats.reduce((acc, c) => acc + c.amount, 0);
-            const spent = transactionsArray
-                .filter(t => cats.some(c => c.recordID === t.categoryID) && t.transactionType === 'expense')
-                .reduce((acc, t) => acc + t.amount, 0);
-            return { name: s.sectionName, Budgeted: Math.round(budgeted * 100) / 100, Spent: Math.round(spent * 100) / 100 };
-        })
-        .filter(d => d.Budgeted > 0 || d.Spent > 0);
 
     const sortedTransactions = [...transactionsArray]
         .filter(t => t.transactionType === 'expense')
@@ -91,6 +79,39 @@ function ThisMonthTab() {
 
     const renderPieLabel = ({ name, value }: any) =>
         value > 0 ? `${name} ${formatter.format(value)}` : '';
+
+    // Spending by Day of Week
+    const dayOfWeekMap = new Map<string, number>();
+    const dayOrder = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    dayOrder.forEach(d => dayOfWeekMap.set(d, 0));
+    sortedTransactions.forEach(t => {
+        const dow = dayjs(t.transactionDate).format('ddd');
+        dayOfWeekMap.set(dow, (dayOfWeekMap.get(dow) || 0) + t.amount);
+    });
+    const spendingByDow = dayOrder.map(d => ({ day: d, amount: Math.round((dayOfWeekMap.get(d) || 0) * 100) / 100 }));
+    const hasSpendingByDow = spendingByDow.some(d => d.amount > 0);
+
+    // Average Transaction Size
+    const expenseTransactionCount = sortedTransactions.length;
+    const totalExpenseAmount = sortedTransactions.reduce((acc, t) => acc + t.amount, 0);
+    const avgTransactionSize = expenseTransactionCount > 0 ? Math.round((totalExpenseAmount / expenseTransactionCount) * 100) / 100 : 0;
+
+    // Top 5 Biggest Transactions
+    const top5Transactions = [...sortedTransactions]
+        .sort((a, b) => b.amount - a.amount)
+        .slice(0, 5)
+        .map(t => ({ name: t.title, amount: Math.round(t.amount * 100) / 100 }));
+
+    // Transaction Frequency (by week of month)
+    const weekMap = new Map<string, number>();
+    sortedTransactions.forEach(t => {
+        const weekNum = Math.ceil(dayjs(t.transactionDate).date() / 7);
+        const label = `Week ${weekNum}`;
+        weekMap.set(label, (weekMap.get(label) || 0) + 1);
+    });
+    const transactionFrequency = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5']
+        .map(w => ({ week: w, count: weekMap.get(w) || 0 }))
+        .filter((_, i, arr) => i < 4 || arr[4]?.count > 0); // only show week 5 if it has data
 
     return (
         <Grid container spacing={2} sx={{ maxWidth: { xs: 500, md: 1040 }, width: '100%' }}>
@@ -156,27 +177,14 @@ function ThisMonthTab() {
                 </Grid>
             )}
 
-            {barData.length > 0 && (
-                <Grid size={{ xs: 12, md: 6 }}>
-                    <Paper elevation={4} sx={{ borderRadius: 3, p: 2 }}>
-                        <Typography textAlign='center' color='text.secondary' variant='h6' sx={{ fontWeight: '600', mb: 1 }}>
-                            Budgeted vs Spent
+            {/* Advanced Section */}
+            {hasPro ? (
+                <>
+                    <Grid size={12}>
+                        <Typography variant='subtitle1' color='text.secondary' sx={{ fontWeight: 600, mt: 1 }}>
+                            Advanced
                         </Typography>
-                        <ResponsiveContainer width="100%" height={250}>
-                            <BarChart data={barData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
-                                <XAxis dataKey="name" tick={{ fill: textColor, fontSize: 12 }} />
-                                <YAxis tick={{ fill: textColor, fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
-                                <Tooltip formatter={(val) => formatter.format(Number(val))} {...tooltipStyle} />
-                                <Legend />
-                                <Bar dataKey="Budgeted" fill="#4c809e" radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="Spent" fill="#D6A058" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </Paper>
-                </Grid>
-            )}
-
+                    </Grid>
             {spendingByDay.length > 1 && (
                 <Grid size={{ xs: 12, md: 6 }}>
                     <Paper elevation={4} sx={{ borderRadius: 3, p: 2 }}>
@@ -201,6 +209,97 @@ function ThisMonthTab() {
                     </Paper>
                 </Grid>
             )}
+
+            {/* Spending by Day of Week */}
+            {hasSpendingByDow && (
+                <Grid size={{ xs: 12, md: 6 }}>
+                    <Paper elevation={4} sx={{ borderRadius: 3, p: 2 }}>
+                        <Typography textAlign='center' color='text.secondary' variant='h6' sx={{ fontWeight: '600', mb: 1 }}>
+                            Spending by Day of Week
+                        </Typography>
+                        <ResponsiveContainer width="100%" height={250}>
+                            <BarChart data={spendingByDow} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+                                <XAxis dataKey="day" tick={{ fill: textColor, fontSize: 12 }} />
+                                <YAxis tick={{ fill: textColor, fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
+                                <Tooltip formatter={(val) => formatter.format(Number(val))} {...tooltipStyle} />
+                                <Bar dataKey="amount" fill="#9b7fd4" radius={[4, 4, 0, 0]} name="Spent" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </Paper>
+                </Grid>
+            )}
+
+            {/* Average Transaction Size + Transaction Frequency */}
+            {expenseTransactionCount > 0 && (
+                <Grid size={{ xs: 12, md: 6 }}>
+                    <Paper elevation={4} sx={{ borderRadius: 3, p: 2 }}>
+                        <Typography textAlign='center' color='text.secondary' variant='h6' sx={{ fontWeight: '600', mb: 1 }}>
+                            Transaction Stats
+                        </Typography>
+                        <Box display='flex' justifyContent='space-around' sx={{ mb: 2 }}>
+                            <Box textAlign='center'>
+                                <Typography variant='h5' color='text.primary' sx={{ fontWeight: 600 }}>
+                                    {formatter.format(avgTransactionSize)}
+                                </Typography>
+                                <Typography variant='caption' color='text.secondary'>Avg Transaction</Typography>
+                            </Box>
+                            <Box textAlign='center'>
+                                <Typography variant='h5' color='text.primary' sx={{ fontWeight: 600 }}>
+                                    {expenseTransactionCount}
+                                </Typography>
+                                <Typography variant='caption' color='text.secondary'>Total Transactions</Typography>
+                            </Box>
+                        </Box>
+                        <Typography textAlign='center' color='text.secondary' variant='subtitle2' sx={{ fontWeight: '600', mb: 1 }}>
+                            Transactions by Week
+                        </Typography>
+                        <ResponsiveContainer width="100%" height={150}>
+                            <BarChart data={transactionFrequency} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+                                <XAxis dataKey="week" tick={{ fill: textColor, fontSize: 12 }} />
+                                <YAxis tick={{ fill: textColor, fontSize: 12 }} allowDecimals={false} />
+                                <Tooltip {...tooltipStyle} />
+                                <Bar dataKey="count" fill="#5cc2c7" radius={[4, 4, 0, 0]} name="Transactions" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </Paper>
+                </Grid>
+            )}
+
+            {/* Top 5 Biggest Transactions */}
+            {top5Transactions.length > 0 && (
+                <Grid size={{ xs: 12, md: 6 }}>
+                    <Paper elevation={4} sx={{ borderRadius: 3, p: 2 }}>
+                        <Typography textAlign='center' color='text.secondary' variant='h6' sx={{ fontWeight: '600', mb: 1 }}>
+                            Top 5 Biggest Expenses
+                        </Typography>
+                        <ResponsiveContainer width="100%" height={250}>
+                            <BarChart data={top5Transactions} layout="vertical" margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+                                <XAxis type="number" tick={{ fill: textColor, fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
+                                <YAxis type="category" dataKey="name" tick={{ fill: textColor, fontSize: 11 }} width={100} />
+                                <Tooltip formatter={(val) => formatter.format(Number(val))} {...tooltipStyle} />
+                                <Bar dataKey="amount" fill="#D6A058" radius={[0, 4, 4, 0]} name="Amount" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </Paper>
+                </Grid>
+            )}
+                </>
+            ) : (
+                <Grid size={12}>
+                    <Paper elevation={2} sx={{ borderRadius: 3, p: 3, textAlign: 'center' }}>
+                        <LockIcon sx={{ fontSize: 36, color: 'text.disabled', mb: 0.5 }} />
+                        <Typography variant='subtitle1' color='text.secondary' sx={{ fontWeight: 600 }}>
+                            Advanced Analytics
+                        </Typography>
+                        <Typography variant='body2' color='text.disabled'>
+                            Upgrade to Pro to unlock detailed spending insights, trends, and more.
+                        </Typography>
+                    </Paper>
+                </Grid>
+            )}
         </Grid>
     );
 }
@@ -212,6 +311,7 @@ interface MonthData {
     totalSpent: number;
     totalIncome: number;
     categorySpending: Map<string, number>; // keyed by category NAME
+    dailySpending: Map<number, number>; // keyed by day of month (1-31), cumulative
 }
 
 function TrendsTab() {
@@ -265,7 +365,7 @@ function TrendsTab() {
                     .eq('sectionYear', year);
 
                 if (!allSections || allSections.length === 0) {
-                    results.push({ month, year, totalSpent: 0, totalIncome: 0, categorySpending: new Map() });
+                    results.push({ month, year, totalSpent: 0, totalIncome: 0, categorySpending: new Map(), dailySpending: new Map() });
                     continue;
                 }
 
@@ -279,7 +379,7 @@ function TrendsTab() {
                     .in('sectionID', allSections.map((s: any) => s.recordID));
 
                 if (!categories || categories.length === 0) {
-                    results.push({ month, year, totalSpent: 0, totalIncome: 0, categorySpending: new Map() });
+                    results.push({ month, year, totalSpent: 0, totalIncome: 0, categorySpending: new Map(), dailySpending: new Map() });
                     continue;
                 }
 
@@ -324,12 +424,25 @@ function TrendsTab() {
                     }
                 });
 
+                // Build daily cumulative spending (by day of month)
+                const dailySpending = new Map<number, number>();
+                const expenseTransactions = (transactions || [])
+                    .filter((t: any) => t.transactionType === 'expense' && expenseCatIds.has(t.categoryID))
+                    .sort((a: any, b: any) => a.transactionDate - b.transactionDate);
+                let dailyCumulative = 0;
+                expenseTransactions.forEach((t: any) => {
+                    const dayOfMonth = dayjs(t.transactionDate).date();
+                    dailyCumulative += t.amount;
+                    dailySpending.set(dayOfMonth, Math.round(dailyCumulative * 100) / 100);
+                });
+
                 results.push({
                     month,
                     year,
                     totalSpent: Math.round(totalSpent * 100) / 100,
                     totalIncome: Math.round(totalIncome * 100) / 100,
                     categorySpending,
+                    dailySpending,
                 });
             }
 
@@ -548,6 +661,56 @@ function TrendsTab() {
                     </Paper>
                 </Grid>
             )}
+
+            {/* Spending Pace Comparison */}
+            {(() => {
+                // Build cumulative spending by day-of-month for up to 3 months
+                const paceMonths = [twoMonthsAgo, lastMonth, thisMonth].filter(m => m && m.dailySpending.size > 0);
+                if (paceMonths.length < 2) return null;
+                const maxDay = Math.max(...paceMonths.map(m => Math.max(...Array.from(m!.dailySpending.keys()))));
+                const paceData = Array.from({ length: maxDay }, (_, i) => {
+                    const day = i + 1;
+                    const entry: any = { day };
+                    paceMonths.forEach(m => {
+                        // Find the cumulative value at or before this day
+                        let val = 0;
+                        for (let d = day; d >= 1; d--) {
+                            if (m!.dailySpending.has(d)) { val = m!.dailySpending.get(d)!; break; }
+                        }
+                        entry[`${m!.month.slice(0, 3)} ${m!.year}`] = val;
+                    });
+                    return entry;
+                });
+                const paceColors = ['#9b7fd4', '#D6A058', '#4c809e'];
+                return (
+                    <Grid size={{ xs: 12 }}>
+                        <Paper elevation={4} sx={{ borderRadius: 3, p: 2 }}>
+                            <Typography textAlign='center' color='text.secondary' variant='h6' sx={{ fontWeight: '600', mb: 1 }}>
+                                Spending Pace Comparison
+                            </Typography>
+                            <ResponsiveContainer width="100%" height={280}>
+                                <LineChart data={paceData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+                                    <XAxis dataKey="day" tick={{ fill: textColor, fontSize: 12 }} label={{ value: 'Day of Month', position: 'insideBottom', offset: -2, fill: textColor, fontSize: 11 }} />
+                                    <YAxis tick={{ fill: textColor, fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
+                                    <Tooltip formatter={(val) => formatter.format(Number(val))} {...tooltipStyle} />
+                                    <Legend />
+                                    {paceMonths.map((m, i) => (
+                                        <Line
+                                            key={`${m!.month}-${m!.year}`}
+                                            type="monotone"
+                                            dataKey={`${m!.month.slice(0, 3)} ${m!.year}`}
+                                            stroke={paceColors[i % paceColors.length]}
+                                            strokeWidth={2}
+                                            dot={false}
+                                        />
+                                    ))}
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </Paper>
+                    </Grid>
+                );
+            })()}
         </Grid>
     );
 }
@@ -571,7 +734,7 @@ export default function AnalyticsPage() {
                 <Tab label="Trends" icon={!hasPro ? <LockIcon fontSize="small" /> : undefined} iconPosition="end" />
             </Tabs>
 
-            {tab === 0 && <ThisMonthTab />}
+            {tab === 0 && <ThisMonthTab hasPro={hasPro} />}
             {tab === 1 && (
                 hasPro ? (
                     <TrendsTab />
