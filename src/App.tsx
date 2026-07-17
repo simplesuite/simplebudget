@@ -330,7 +330,7 @@ export default function App() {
             <Toolbar /><Outlet />
           </Box>
           <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} elevation={3}>
-            {matches ? null : <Fab color='secondary' sx={{ alignSelf: 'center', position: 'absolute', zIndex: 1, left: '50%', transform: 'translateX(-50%)', bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))' }} size="medium"
+            {matches ? null : <Fab color='secondary' sx={{ alignSelf: 'center', position: 'absolute', zIndex: 1, left: '50%', transform: 'translateX(-50%)', bottom: 'calc(35px + env(safe-area-inset-bottom, 0px))' }} size="medium"
               onClick={() => setAddNewTransaction(true)}><AddIcon /></Fab>}
             <BottomNavigation
               showLabels

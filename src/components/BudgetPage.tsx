@@ -31,7 +31,7 @@ import CopyBudget from "./modals/CopyBudget";
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, alpha } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
@@ -298,49 +298,63 @@ export default function BudgetPage() {
                                     <ChevronRightIcon />
                                 </IconButton>
                             </Box>
-                            <Paper elevation={2} sx={{ borderRadius: 3, mt: 1, p: 1.5 }}>
-                                <Box display='flex' justifyContent='space-between' sx={{ mb: 0.5 }}>
-                                    <Typography variant='caption' color='text.secondary'>Planned Total</Typography>
-                                    <Typography variant='caption' color='text.secondary'>Tracked Total</Typography>
+                            <Paper elevation={4} sx={{ borderRadius: 3, mt: 2, p: 1.5 }}>
+                                {/* Planned bar */}
+                                <Box sx={{ mb: 2 }}>
+                                    <Typography variant='body1' color='text.secondary'>
+                                        Planned net: <strong style={{ color: totalIncome - totalExpenses < 0 ? theme.palette.error.main : theme.palette.success.main }}>
+                                            {formatter.format(totalIncome - totalExpenses)}
+                                        </strong>
+                                    </Typography>
+                                    <Box display='flex' justifyContent='space-between' alignItems='baseline' sx={{ mb: 0.25 }}>
+                                        <Typography variant='caption' color='text.secondary'>
+                                            {formatter.format(totalExpenses)} in / {formatter.format(totalIncome)} out
+                                        </Typography>
+                                    </Box>
+                                    <LinearProgress
+                                        variant="determinate"
+                                        value={Math.min(totalIncome > 0 ? (totalExpenses / totalIncome) * 100 : 0, 100)}
+                                        color={totalExpenses > totalIncome ? 'error' : 'warning'}
+                                        sx={{
+                                            height: 15,
+                                            borderRadius: 2,
+                                            [`& .MuiLinearProgress-bar`]: {
+                                                backgroundColor: alpha(
+                                                    totalExpenses > totalIncome ? theme.palette.error.main : theme.palette.warning.main,
+                                                    0.7
+                                                ),
+                                            },
+                                        }}
+                                    />
                                 </Box>
-                                <Box display='flex' justifyContent='space-between' alignItems='baseline'>
-                                    <Typography variant='body2' color='text.secondary'>
-                                        {formatter.format(totalIncome)} in
+                                {/* Tracked bar */}
+                                <Box>
+                                    <Typography variant='body1' color='text.secondary' sx={{textAlign: 'left'}} >
+                                        Tracked net: <strong style={{ color: totalActualIncome - totalActualExpenses < 0 ? theme.palette.error.main : theme.palette.success.main }}>
+                                            {formatter.format(totalActualIncome - totalActualExpenses)}
+                                        </strong>
                                     </Typography>
-                                    <Typography variant='body2' color='text.secondary'>
-                                        {formatter.format(totalActualIncome)} in
-                                    </Typography>
+                                    <Box display='flex' justifyContent='space-between' alignItems='baseline' sx={{ mb: 0.25 }}>
+                                        <Typography variant='caption' color='text.secondary'>
+                                            {formatter.format(totalActualExpenses)} in / {formatter.format(totalActualIncome)} out
+                                        </Typography>
+                                    </Box>
+                                    <LinearProgress
+                                        variant="determinate"
+                                        value={Math.min(totalActualIncome > 0 ? (totalActualExpenses / totalActualIncome) * 100 : 0, 100)}
+                                        color={totalActualExpenses > totalActualIncome ? 'error' : 'success'}
+                                        sx={{
+                                            height: 15,
+                                            borderRadius: 2,
+                                            [`& .MuiLinearProgress-bar`]: {
+                                                backgroundColor: alpha(
+                                                    totalActualExpenses > totalActualIncome ? theme.palette.error.main : theme.palette.success.main,
+                                                    0.7
+                                                ),
+                                            },
+                                        }}
+                                    />
                                 </Box>
-                                <Box display='flex' justifyContent='space-between' alignItems='baseline'>
-                                    <Typography variant='body2' color='text.secondary'>
-                                        {formatter.format(totalExpenses)} out
-                                    </Typography>
-                                    <Typography variant='body2' color='text.secondary'>
-                                        {formatter.format(totalActualExpenses)} out
-                                    </Typography>
-                                </Box>
-                                <Box display='flex' justifyContent='space-between' alignItems='baseline' sx={{ mt: 0.5 }}>
-                                    <Typography
-                                        variant='body1'
-                                        sx={{ fontWeight: 'bold' }}
-                                        color={totalIncome - totalExpenses < 0 ? 'error.main' : 'success.main'}
-                                    >
-                                        {formatter.format(totalIncome - totalExpenses)}
-                                    </Typography>
-                                    <Typography
-                                        variant='body1'
-                                        sx={{ fontWeight: 'bold' }}
-                                        color={totalActualIncome - totalActualExpenses < 0 ? 'error.main' : 'success.main'}
-                                    >
-                                        {formatter.format(totalActualIncome - totalActualExpenses)}
-                                    </Typography>
-                                </Box>
-                                <LinearProgress
-                                    sx={{ height: 6, borderRadius: 3, mt: 1 }}
-                                    variant="determinate"
-                                    color={(totalActualExpenses / totalActualIncome) > 1 ? 'error' : 'success'}
-                                    value={Math.min((totalActualExpenses / (totalActualIncome || 1)) * 100, 100)}
-                                />
                             </Paper>
                         </Box>
 

@@ -82,7 +82,7 @@ export default function TransactionsPage() {
                                             <Chip size='small' label='Uncategorized' color='warning' />
                                         </Grid>
                                         <Grid size='auto' sx={{ textAlign: 'right' }}>
-                                            <Typography style={{ overflow: "hidden", textOverflow: "ellipsis" }} display='inline'
+                                            <Typography color={row.transactionType === 'expense' ? 'error.light' : 'success.light'} style={{ overflow: "hidden", textOverflow: "ellipsis" }} display='inline'
                                                 variant='body1'>{(row.transactionType === 'expense' ? '-' : '+') + formatter.format(row.amount)}</Typography>
                                         </Grid>
                                     </Grid>
@@ -133,7 +133,7 @@ export default function TransactionsPage() {
                                             />
                                         </Grid>
                                         <Grid size='auto' sx={{ textAlign: 'right' }}>
-                                            <Typography style={{ overflow: "hidden", textOverflow: "ellipsis" }} display='inline'
+                                            <Typography color={row.transactionType === 'expense' ? 'error.main' : 'success.main'} style={{ overflow: "hidden", textOverflow: "ellipsis" }} display='inline'
                                                 variant='body1'>{(row.transactionType === 'expense' ? '-' : '+') + formatter.format(row.amount)}</Typography>
                                         </Grid>
                                     </Grid>
