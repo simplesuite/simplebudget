@@ -105,6 +105,35 @@ export default function SettingsPage() {
         return () => document.removeEventListener('visibilitychange', handleVisibility);
     }, [notificationsEnabled]);
 
+    // Fetch users this budget is shared with
+    const [budgetSharedUsers, setBudgetSharedUsers] = React.useState<{ recordID: string; fullName: string; email: string }[]>([]);
+    React.useEffect(() => {
+        if (!currentBudget?.budgetID) return;
+        const fetchSharedUsers = async () => {
+            const { data: shareRecords } = await supabase
+                .from('shared')
+                .select('sharedToID')
+                .eq('budgetID', currentBudget.budgetID);
+            if (!shareRecords || shareRecords.length === 0) {
+                setBudgetSharedUsers([]);
+                return;
+            }
+            const userIDs = shareRecords.map((s: any) => s.sharedToID);
+            const { data: users } = await supabase
+                .from('users')
+                .select('recordID, fullName, email')
+                .in('recordID', userIDs);
+            if (users) {
+                setBudgetSharedUsers(users.map((u: any) => ({
+                    recordID: u.recordID,
+                    fullName: u.fullName || '',
+                    email: u.email || '',
+                })));
+            }
+        };
+        fetchSharedUsers();
+    }, [currentBudget?.budgetID]);
+
     const handleNotificationsToggle = async () => {
         if (!notificationsEnabled) {
             const granted = await requestNotificationPermission();
@@ -432,9 +461,22 @@ export default function SettingsPage() {
 
                     {/* ─── Budget Card ─── */}
                     <Paper elevation={4} sx={{ borderRadius: 4, p: 3 }}>
-                        <Typography color="text.secondary" variant="subtitle2" sx={{ fontWeight: 800, mb: 2.5, textTransform: 'uppercase' }}>
-                            {'Budget: ' + (currentBudgetDetails?.budgetName || '')}
-                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
+                            <Typography color="text.secondary" variant="subtitle2" sx={{ fontWeight: 800, textTransform: 'uppercase' }}>
+                                {'Budget: ' + (currentBudgetDetails?.budgetName || '')}
+                            </Typography>
+                            {budgetSharedUsers.length > 0 && (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    {budgetSharedUsers.map((u) => (
+                                        <Avatar
+                                            key={u.recordID}
+                                            src={`https://api.dicebear.com/9.x/shapes/svg?seed=${u.recordID}`}
+                                            sx={{ width: 24, height: 24 }}
+                                        />
+                                    ))}
+                                </Box>
+                            )}
+                        </Box>
 
                         <Stack spacing={1.5}>
                             <Button
