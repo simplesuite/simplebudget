@@ -77,55 +77,55 @@ export default function SignUpPage() {
 
     async function supaSignUpFc(event: any) {
         event.preventDefault();
-        setLoadingOpen(true)
         setErrorText('')
-        if (validateFormFull()) {
-            try {
-                const { data: userData, error: signupErr } = await supabase.auth.signUp({
-                    email: email,
-                    password: password,
-                    options: {
-                        data: {
-                            full_name: fullName
-                        }
-                    }
-                })
-                if (signupErr) {
-                    if (signupErr.status === 429) {
-                        setErrorText("Too many attempts. Please wait a moment and try again.")
-                    } else {
-                        setErrorText(signupErr.message)
-                    }
-                    console.error(signupErr?.message, signupErr?.code)
-                    return
-                }
-                // Supabase returns an existing user with empty identities (instead of an error)
-                // when the email is already registered — this prevents email enumeration.
-                if (userData?.user?.identities?.length === 0) {
-                    setErrorText("User with this email already exists")
-                    console.error("Signup returned existing user with no identities")
-                    return
-                }
+        if (!validateFormFull()) return;
 
-                // The public.users row is created automatically by a database trigger
-                // on auth.users insert (handle_new_user function).
-                if (userData?.user?.id) {
-                    setCurrentUser({
-                        recordID: userData.user.id,
-                        fullName: fullName,
-                        userType: 'free'
-                    });
+        setLoadingOpen(true)
+        try {
+            const { data: userData, error: signupErr } = await supabase.auth.signUp({
+                email: email,
+                password: password,
+                options: {
+                    data: {
+                        full_name: fullName
+                    }
                 }
-
-                setSignedUpBool(true)
-                setSnackSev('success')
-                setSnackText('Signup Successful - please verify email to login')
-                setSnackOpen(true)
-            } catch (error: any) {
-                setErrorText(error?.message)
-            } finally {
-                setLoadingOpen(false)
+            })
+            if (signupErr) {
+                if (signupErr.status === 429) {
+                    setErrorText("Too many attempts. Please wait a moment and try again.")
+                } else {
+                    setErrorText(signupErr.message)
+                }
+                console.error(signupErr?.message, signupErr?.code)
+                return
             }
+            // Supabase returns an existing user with empty identities (instead of an error)
+            // when the email is already registered — this prevents email enumeration.
+            if (userData?.user?.identities?.length === 0) {
+                setErrorText("User with this email already exists")
+                console.error("Signup returned existing user with no identities")
+                return
+            }
+
+            // The public.users row is created automatically by a database trigger
+            // on auth.users insert (handle_new_user function).
+            if (userData?.user?.id) {
+                setCurrentUser({
+                    recordID: userData.user.id,
+                    fullName: fullName,
+                    userType: 'free'
+                });
+            }
+
+            setSignedUpBool(true)
+            setSnackSev('success')
+            setSnackText('Signup Successful - please verify email to login')
+            setSnackOpen(true)
+        } catch (error: any) {
+            setErrorText(error?.message)
+        } finally {
+            setLoadingOpen(false)
         }
     }
     const handleRedirectSignUp = (event: any) => {
