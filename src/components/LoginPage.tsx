@@ -75,7 +75,8 @@ export default function LoginPage() {
             .insert({
                 recordID: data.user!.id,
                 fullName: fullName,
-                userType: 'free'
+                userType: 'free',
+                email: email
             })
         if (insertErr) {
             setErrorText(insertErr.message)

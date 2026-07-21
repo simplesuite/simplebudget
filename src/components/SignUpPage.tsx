@@ -99,43 +99,24 @@ export default function SignUpPage() {
                     console.error(signupErr?.message, signupErr?.code)
                     return
                 }
-                if (!userData?.user?.id) {
-                    // Email confirmation is enabled — Supabase won't return the user
-                    // until confirmed. Show success and handle public.users insert on first login.
-                    setSignedUpBool(true)
-                    setSnackSev('success')
-                    setSnackText('Signup Successful - please verify email to login')
-                    setSnackOpen(true)
-                    return
-                }
                 // Supabase returns an existing user with empty identities (instead of an error)
                 // when the email is already registered — this prevents email enumeration.
-                if (userData.user.identities?.length === 0) {
+                if (userData?.user?.identities?.length === 0) {
                     setErrorText("User with this email already exists")
                     console.error("Signup returned existing user with no identities")
                     return
                 }
 
-                const userId = userData.user.id
-                const { error: signupErr1 } = await supabase
-                    .from('users')
-                    .insert({
-                        recordID: userId,
+                // The public.users row is created automatically by a database trigger
+                // on auth.users insert (handle_new_user function).
+                if (userData?.user?.id) {
+                    setCurrentUser({
+                        recordID: userData.user.id,
                         fullName: fullName,
                         userType: 'free'
-                    })
-                if (signupErr1) {
-                    signupErr1.code === "23503" ? setErrorText("User with this email already exists") : setErrorText(signupErr1.message)
-                    console.error(signupErr1?.message, signupErr1?.code)
-                    return
+                    });
                 }
 
-                // Only run on success — no finally block
-                setCurrentUser({
-                    recordID: userId,
-                    fullName: fullName,
-                    userType: 'free'
-                });
                 setSignedUpBool(true)
                 setSnackSev('success')
                 setSnackText('Signup Successful - please verify email to login')

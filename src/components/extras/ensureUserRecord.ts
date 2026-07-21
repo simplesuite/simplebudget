@@ -39,12 +39,14 @@ export async function ensureUserRecord(): Promise<boolean> {
     }
 
     // Create the record
+    const userEmail = session.user.email || '';
     const { error } = await supabase
         .from('users')
         .insert({
             recordID: userId,
             fullName: fullName,
             userType: 'free',
+            email: userEmail,
         });
 
     if (error) {

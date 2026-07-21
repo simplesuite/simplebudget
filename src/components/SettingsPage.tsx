@@ -276,15 +276,17 @@ export default function SettingsPage() {
                     {/* ─── Profile Card ─── */}
                     <Paper elevation={4} sx={{ borderRadius: 4, p: 3 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5, mb: 2.5 }}>
-                            <Avatar sx={{
-                                width: 72,
-                                height: 72,
-                                fontSize: '1.6rem',
-                                fontWeight: 700,
-                                bgcolor: theme.palette.primary.main,
-                                color: theme.palette.primary.contrastText,
-                                boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.25)}`,
-                            }}>
+                            <Avatar
+                                src={`https://api.dicebear.com/9.x/shapes/svg?seed=${currentUserDetails.recordID}`}
+                                sx={{
+                                    width: 72,
+                                    height: 72,
+                                    fontSize: '1.6rem',
+                                    fontWeight: 700,
+                                    bgcolor: theme.palette.primary.main,
+                                    color: theme.palette.primary.contrastText,
+                                    boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.25)}`,
+                                }}>
                                 {getInitials(currentUserDetails.fullName)}
                             </Avatar>
                             <Box sx={{ flex: 1, minWidth: 0 }}>
