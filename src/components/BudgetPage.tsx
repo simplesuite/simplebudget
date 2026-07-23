@@ -308,7 +308,7 @@ export default function BudgetPage() {
                                     </Typography>
                                     <Box display='flex' justifyContent='space-between' alignItems='baseline' sx={{ mb: 0.25 }}>
                                         <Typography variant='caption' color='text.secondary'>
-                                            {formatter.format(totalExpenses)} in / {formatter.format(totalIncome)} out
+                                            {formatter.format(totalIncome)} in / {formatter.format(totalExpenses)} out
                                         </Typography>
                                     </Box>
                                     <LinearProgress
@@ -336,7 +336,7 @@ export default function BudgetPage() {
                                     </Typography>
                                     <Box display='flex' justifyContent='space-between' alignItems='baseline' sx={{ mb: 0.25 }}>
                                         <Typography variant='caption' color='text.secondary'>
-                                            {formatter.format(totalActualExpenses)} in / {formatter.format(totalActualIncome)} out
+                                            {formatter.format(totalActualIncome)} in / {formatter.format(totalActualExpenses)} out
                                         </Typography>
                                     </Box>
                                     <LinearProgress
