@@ -248,7 +248,7 @@ export default function EditTransaction() {
             setTransactionTitle(currentTransactionDetails.title)
             setTransactionAmount(currentTransactionDetails.amount)
             setTransactionType(currentTransactionDetails.transactionType)
-            setTransactionCategory(categoryGroups.find(x => x.id === currentTransactionDetails.categoryID))
+            setTransactionCategory(categoryGroups.find(x => x.id === currentTransactionDetails.categoryID) ?? null)
             setTransactionDate(dayjs(currentTransactionDetails.transactionDate))
         }
         setErrorText('')
