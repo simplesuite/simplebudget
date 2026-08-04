@@ -282,7 +282,7 @@ export default function BudgetPage() {
                                 </IconButton>
                                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                                     <DatePicker
-                                        sx={{flexGrow: 1}}
+                                        sx={{ flexGrow: 1 }}
                                         views={['year', 'month']}
                                         value={selectedMonth}
                                         onChange={handleMonthChange}
@@ -329,7 +329,7 @@ export default function BudgetPage() {
                                 </Box>
                                 {/* Tracked bar */}
                                 <Box>
-                                    <Typography variant='body1' color='text.secondary' sx={{textAlign: 'left'}} >
+                                    <Typography variant='body1' color='text.secondary' sx={{ textAlign: 'left' }} >
                                         Tracked net: <strong style={{ color: totalActualIncome - totalActualExpenses < 0 ? theme.palette.error.main : theme.palette.success.main }}>
                                             {formatter.format(totalActualIncome - totalActualExpenses)}
                                         </strong>
