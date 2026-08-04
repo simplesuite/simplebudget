@@ -200,7 +200,7 @@ export default function EditTransaction() {
                     Promise.resolve(supabase.from('transactions').update({
                         categoryID: transactionCategory === null ? null : transactionCategory.id,
                         //@ts-ignore
-                        amount: transactionAmount === '' ? 0 : transactionAmount,
+                        amount: transactionAmount === '' ? 0 : Math.round(Number(transactionAmount) * 100) / 100,
                         title: transactionTitle,
                         transactionDate: dayjs(transactionDate).valueOf() !== null ? dayjs(transactionDate).valueOf() : dayjs().valueOf(),
                         transactionType: transactionType,
@@ -217,7 +217,7 @@ export default function EditTransaction() {
                             ...obj,
                             categoryID: transactionCategory === null ? null : transactionCategory.id,
                             //@ts-ignore
-                            amount: transactionAmount === '' ? 0 : transactionAmount,
+                            amount: transactionAmount === '' ? 0 : Math.round(Number(transactionAmount) * 100) / 100,
                             title: transactionTitle,
                             transactionDate: dayjs(transactionDate).valueOf() !== null ? dayjs(transactionDate).valueOf() : 0,
                             transactionType: transactionType,

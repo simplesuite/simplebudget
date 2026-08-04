@@ -136,14 +136,14 @@ export default function BudgetPage() {
     }, 0)
     let totalActualExpensesStart = transactionsArray.reduce((accumulator, object) => {
         if (object.transactionType === "expense") {
-            return accumulator + object.amount;
+            return accumulator + (Number(object.amount) || 0);
         } else {
             return accumulator
         }
     }, 0)
     let totalActualIncomeStart = transactionsArray.reduce((accumulator, object) => {
         if (object.transactionType === "income") {
-            return accumulator + object.amount;
+            return accumulator + (Number(object.amount) || 0);
         } else {
             return accumulator
         }
@@ -175,7 +175,7 @@ export default function BudgetPage() {
         setTotalActualExpenses(
             transactionsArray.reduce((accumulator, object) => {
                 if (object.transactionType === "expense") {
-                    return accumulator + object.amount;
+                    return accumulator + (Number(object.amount) || 0);
                 } else {
                     return accumulator
                 }
@@ -184,7 +184,7 @@ export default function BudgetPage() {
         setTotalActualIncome(
             transactionsArray.reduce((accumulator, object) => {
                 if (object.transactionType === "income") {
-                    return accumulator + object.amount;
+                    return accumulator + (Number(object.amount) || 0);
                 } else {
                     return accumulator
                 }
