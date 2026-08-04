@@ -136,14 +136,14 @@ export default function BudgetPage() {
     }, 0)
     let totalActualExpensesStart = transactionsArray.reduce((accumulator, object) => {
         if (object.transactionType === "expense") {
-            return accumulator + object.amount;
+            return accumulator + (Number(object.amount) || 0);
         } else {
             return accumulator
         }
     }, 0)
     let totalActualIncomeStart = transactionsArray.reduce((accumulator, object) => {
         if (object.transactionType === "income") {
-            return accumulator + object.amount;
+            return accumulator + (Number(object.amount) || 0);
         } else {
             return accumulator
         }
@@ -175,7 +175,7 @@ export default function BudgetPage() {
         setTotalActualExpenses(
             transactionsArray.reduce((accumulator, object) => {
                 if (object.transactionType === "expense") {
-                    return accumulator + object.amount;
+                    return accumulator + (Number(object.amount) || 0);
                 } else {
                     return accumulator
                 }
@@ -184,7 +184,7 @@ export default function BudgetPage() {
         setTotalActualIncome(
             transactionsArray.reduce((accumulator, object) => {
                 if (object.transactionType === "income") {
-                    return accumulator + object.amount;
+                    return accumulator + (Number(object.amount) || 0);
                 } else {
                     return accumulator
                 }
@@ -282,7 +282,7 @@ export default function BudgetPage() {
                                 </IconButton>
                                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                                     <DatePicker
-                                        sx={{flexGrow: 1}}
+                                        sx={{ flexGrow: 1 }}
                                         views={['year', 'month']}
                                         value={selectedMonth}
                                         onChange={handleMonthChange}
@@ -329,7 +329,7 @@ export default function BudgetPage() {
                                 </Box>
                                 {/* Tracked bar */}
                                 <Box>
-                                    <Typography variant='body1' color='text.secondary' sx={{textAlign: 'left'}} >
+                                    <Typography variant='body1' color='text.secondary' sx={{ textAlign: 'left' }} >
                                         Tracked net: <strong style={{ color: totalActualIncome - totalActualExpenses < 0 ? theme.palette.error.main : theme.palette.success.main }}>
                                             {formatter.format(totalActualIncome - totalActualExpenses)}
                                         </strong>
