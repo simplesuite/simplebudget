@@ -96,7 +96,7 @@ export default function App() {
   const loadingOpen = useGlobalStore(s => s.mainLoading)
   const setLoadingOpen = useGlobalStore(s => s.setMainLoading)
   const [addToHomePU, setAddToHomePU] = React.useState(false)
-  const [authChecked, setAuthChecked] = React.useState(false)
+  const [authChecked, setAuthChecked] = React.useState(() => hasSupabaseSession())
   const [isAuthenticated, setIsAuthenticated] = React.useState(() => hasSupabaseSession())
 
   // Listen for auth state changes to handle login/logout properly
