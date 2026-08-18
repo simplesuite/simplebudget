@@ -7,13 +7,17 @@ export default defineConfig({
         react(),
         VitePWA({
             registerType: 'prompt',
+            strategies: 'injectManifest',
+            srcDir: 'src',
+            filename: 'sw.ts',
             includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'android-chrome-192x192.png', 'android-chrome-512x512.png'],
-            workbox: {
+            injectManifest: {
                 // Don't cache-bust URLs that already have hashes (Vite assets)
                 dontCacheBustURLsMatching: /\.[a-f0-9]{8}\./,
-                // Skip waiting so the new SW activates immediately when user accepts
-                skipWaiting: false, // We control this via the prompt
-                clientsClaim: true,
+            },
+            devOptions: {
+                enabled: true,
+                type: 'module',
             },
             manifest: {
                 short_name: 'simpleBudget',

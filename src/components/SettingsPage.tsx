@@ -23,7 +23,7 @@ import Chip from '@mui/material/Chip';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ShareIcon from '@mui/icons-material/Share';
 import ListAltIcon from '@mui/icons-material/ListAlt';
-import { supabase } from "../lib/supabase";
+import { supabase, getSupabaseStorageKey } from "../lib/supabase";
 import { redirectToCheckout, redirectToBillingPortal, useEntitlement } from "../lib/checkout";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import QrCodeIcon from '@mui/icons-material/QrCode';
@@ -49,6 +49,7 @@ import Avatar from '@mui/material/Avatar';
 import TextField from '@mui/material/TextField';
 import { useNotificationStore } from '../store/notificationStore';
 import { notificationsSupported, requestNotificationPermission } from '../lib/notifications';
+import { pushSupported, subscribeToPush, unsubscribeFromPush } from '../lib/pushSubscription';
 
 function getInitials(name: string | null): string {
     if (!name) return '?';
@@ -140,6 +141,13 @@ export default function SettingsPage() {
             if (granted) {
                 setNotificationsEnabled(true);
                 setNotificationsPrompted(true);
+                // Also subscribe to server-side push notifications
+                if (pushSupported()) {
+                    const pushOk = await subscribeToPush();
+                    if (pushOk) {
+                        useNotificationStore.getState().setPushEnabled(true);
+                    }
+                }
                 setSnackSev('success');
                 setSnackText('Notifications enabled');
                 setSnackOpen(true);
@@ -150,6 +158,11 @@ export default function SettingsPage() {
             }
         } else {
             setNotificationsEnabled(false);
+            // Also unsubscribe from server-side push
+            if (pushSupported()) {
+                await unsubscribeFromPush();
+                useNotificationStore.getState().setPushEnabled(false);
+            }
             setSnackSev('success');
             setSnackText('Notifications disabled');
             setSnackOpen(true);
@@ -199,7 +212,11 @@ export default function SettingsPage() {
         setSnackOpen(true);
     };
 
-    async function supaLogOut() { await supabase.auth.signOut(); }
+    async function supaLogOut() {
+        try { await supabase.auth.signOut(); } catch { /* ignore network errors */ }
+        // Always clear local session so logout works even when offline
+        localStorage.removeItem(getSupabaseStorageKey());
+    }
 
     const handleOpenDeleteDialog = () => {
         setDeleteConfirmText('');
@@ -335,7 +352,7 @@ export default function SettingsPage() {
                             </Button>
                             <Button
                                 variant="outlined" startIcon={<LogoutIcon />}
-                                onClick={fnLogout} disabled={offline}
+                                onClick={fnLogout}
                                 color="error"
                                 sx={{ textTransform: 'none', borderRadius: 2, flex: 1 }}
                             >
