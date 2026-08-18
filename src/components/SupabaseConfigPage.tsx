@@ -38,6 +38,7 @@ export default function SupabaseConfigPage() {
     );
     const [url, setUrl] = React.useState(parsed?.url || '');
     const [apiKey, setApiKey] = React.useState(parsed?.key || '');
+    const [vapidKey, setVapidKey] = React.useState(localStorage.getItem('vapidPublicKey') || '');
     const [saved, setSaved] = React.useState(false);
     const [error, setError] = React.useState('');
 
@@ -56,6 +57,7 @@ export default function SupabaseConfigPage() {
 
         if (mode === 'production') {
             resetToProductionSupabase();
+            localStorage.removeItem('vapidPublicKey');
             setSaved(true);
             return;
         }
@@ -77,6 +79,12 @@ export default function SupabaseConfigPage() {
         }
 
         setCustomSupabaseConfig(url.trim(), apiKey.trim());
+        // Save VAPID public key if provided (optional — needed for push notifications)
+        if (vapidKey.trim()) {
+            localStorage.setItem('vapidPublicKey', vapidKey.trim());
+        } else {
+            localStorage.removeItem('vapidPublicKey');
+        }
         setSaved(true);
     }
 
@@ -179,6 +187,18 @@ export default function SupabaseConfigPage() {
                                         onChange={(e) => { setApiKey(e.target.value); setSaved(false); }}
                                         multiline
                                         maxRows={3}
+                                    />
+                                </Grid>
+                                <Grid size={12}>
+                                    <TextField
+                                        fullWidth
+                                        label="VAPID Public Key (optional)"
+                                        placeholder="BPe7K...base64url-encoded..."
+                                        helperText="Required for push notifications. Found in your server's .env file."
+                                        value={vapidKey}
+                                        onChange={(e) => { setVapidKey(e.target.value); setSaved(false); }}
+                                        multiline
+                                        maxRows={2}
                                     />
                                 </Grid>
                             </>

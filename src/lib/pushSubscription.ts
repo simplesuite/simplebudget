@@ -24,11 +24,16 @@ declare global {
 }
 
 function getVapidPublicKey(): string | null {
-    // Self-hosted runtime injection (same pattern as Supabase config)
+    // 1. Per-user localStorage override (set via Backend Configuration page)
+    const storedKey = localStorage.getItem('vapidPublicKey');
+    if (storedKey) {
+        return storedKey;
+    }
+    // 2. Self-hosted runtime injection (same pattern as Supabase config)
     if (window.__VAPID_PUBLIC_KEY__) {
         return window.__VAPID_PUBLIC_KEY__;
     }
-    // Build-time env var
+    // 3. Build-time env var
     const envKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
     if (envKey && typeof envKey === 'string') {
         return envKey;
@@ -106,16 +111,36 @@ export async function subscribeToPush(): Promise<boolean> {
     }
 
     try {
-        const registration = await navigator.serviceWorker.ready;
+        // Timeout to prevent hanging if SW never becomes ready
+        const registration = await Promise.race([
+            navigator.serviceWorker.ready,
+            new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error('Service worker not ready after 5s')), 5000)
+            ),
+        ]);
+
+        if (!registration.pushManager) {
+            console.warn('[push] Service worker does not support pushManager.');
+            return false;
+        }
 
         // Subscribe (or get existing subscription)
-        const subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(vapidKey),
-        });
+        // Some browsers (Chromium forks without FCM) hang on subscribe(), so add a timeout
+        const subscription = await Promise.race([
+            registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(vapidKey),
+            }),
+            new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error('Push subscription timed out — your browser may not support push notifications')), 10000)
+            ),
+        ]);
+
+        console.log('[push] Browser subscription created, saving to database...');
 
         // Persist to database
         await saveSubscription(subscription);
+        console.log('[push] Subscription saved successfully.');
         return true;
     } catch (err) {
         console.error('[push] Failed to subscribe:', err);
@@ -164,7 +189,7 @@ export async function isSubscribedToPush(): Promise<boolean> {
 
 /**
  * Save (upsert) the push subscription to the database.
- * Uses the endpoint + app as the unique constraint for conflict resolution.
+ * Checks for existing subscription by endpoint+app, then inserts or updates.
  */
 async function saveSubscription(subscription: PushSubscription): Promise<void> {
     const { data: userData } = await supabase.auth.getUser();
@@ -176,24 +201,46 @@ async function saveSubscription(subscription: PushSubscription): Promise<void> {
     const json = subscription.toJSON();
     const now = Date.now();
 
-    const record = {
-        recordID: generateRecordID(),
-        userID: userData.user.id,
-        app: APP_NAME,
-        endpoint: subscription.endpoint,
-        keyP256dh: json.keys?.p256dh ?? '',
-        keyAuth: json.keys?.auth ?? '',
-        createdAt: now,
-        updatedAt: now,
-    };
-
-    // Upsert: if this endpoint+app combo already exists, update the keys and timestamp
-    const { error } = await supabase
+    // Check if a subscription already exists for this endpoint + app
+    const { data: existing } = await supabase
         .from('push_subscriptions')
-        .upsert(record, { onConflict: 'endpoint,app' });
+        .select('recordID')
+        .eq('endpoint', subscription.endpoint)
+        .eq('app', APP_NAME)
+        .maybeSingle();
 
-    if (error) {
-        console.error('[push] Failed to save subscription to database:', error.message);
+    if (existing) {
+        // Update the keys (they may have rotated)
+        const { error } = await supabase
+            .from('push_subscriptions')
+            .update({
+                keyP256dh: json.keys?.p256dh ?? '',
+                keyAuth: json.keys?.auth ?? '',
+                updatedAt: now,
+            })
+            .eq('recordID', existing.recordID);
+
+        if (error) {
+            console.error('[push] Failed to update subscription:', error.message);
+        }
+    } else {
+        // Insert new subscription
+        const { error } = await supabase
+            .from('push_subscriptions')
+            .insert({
+                recordID: generateRecordID(),
+                userID: userData.user.id,
+                app: APP_NAME,
+                endpoint: subscription.endpoint,
+                keyP256dh: json.keys?.p256dh ?? '',
+                keyAuth: json.keys?.auth ?? '',
+                createdAt: now,
+                updatedAt: now,
+            });
+
+        if (error) {
+            console.error('[push] Failed to save subscription to database:', error.message);
+        }
     }
 }
 

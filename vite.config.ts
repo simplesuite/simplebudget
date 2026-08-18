@@ -15,6 +15,10 @@ export default defineConfig({
                 // Don't cache-bust URLs that already have hashes (Vite assets)
                 dontCacheBustURLsMatching: /\.[a-f0-9]{8}\./,
             },
+            devOptions: {
+                enabled: true,
+                type: 'module',
+            },
             manifest: {
                 short_name: 'simpleBudget',
                 name: 'simpleBudget: Keep on track for your goals!',
