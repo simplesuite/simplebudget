@@ -36,7 +36,6 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
-import Divider from '@mui/material/Divider';
 import Avatar from '@mui/material/Avatar';
 import Grid from '@mui/material/Grid';
 import useCategoryActions from "./extras/useCategoryActions";
@@ -103,6 +102,45 @@ export default function BudgetPage() {
         .reduce((a, t) => a + t.amount, 0);
     const sidebarTracked = Math.round((sidebarEarned - sidebarSpent) * 100) / 100;
     const sidebarRemaining = selectedCategory ? selectedCategory.amount + sidebarTracked : 0;
+
+    // Desktop sidebar: date buckets
+    const sidebarToday = dayjs().startOf('day');
+    const sidebarYesterday = sidebarToday.subtract(1, 'day');
+    const sidebarLastWeekStart = sidebarToday.subtract(7, 'day');
+
+    const sidebarUpcoming = sidebarTransactions.filter(t => dayjs(t.transactionDate).isAfter(sidebarToday.endOf('day')));
+    const sidebarTodayTx = sidebarTransactions.filter(t => dayjs(t.transactionDate).isSame(sidebarToday, 'day'));
+    const sidebarYesterdayTx = sidebarTransactions.filter(t => dayjs(t.transactionDate).isSame(sidebarYesterday, 'day'));
+    const sidebarLastWeekTx = sidebarTransactions.filter(t => {
+        const d = dayjs(t.transactionDate);
+        return d.isBefore(sidebarYesterday) && (d.isAfter(sidebarLastWeekStart) || d.isSame(sidebarLastWeekStart, 'day'));
+    });
+    const sidebarEarlierTx = sidebarTransactions.filter(t => dayjs(t.transactionDate).isBefore(sidebarLastWeekStart));
+
+    // Desktop sidebar: section collapse states
+    const [sbUpcomingExpanded, setSbUpcomingExpanded] = React.useState(() => {
+        try { return localStorage.getItem('sbUpcomingExpanded') !== 'false'; } catch { return true; }
+    });
+    const [sbTodayExpanded, setSbTodayExpanded] = React.useState(() => {
+        try { return localStorage.getItem('sbTodayExpanded') !== 'false'; } catch { return true; }
+    });
+    const [sbYesterdayExpanded, setSbYesterdayExpanded] = React.useState(() => {
+        try { return localStorage.getItem('sbYesterdayExpanded') !== 'false'; } catch { return true; }
+    });
+    const [sbLastWeekExpanded, setSbLastWeekExpanded] = React.useState(() => {
+        try { return localStorage.getItem('sbLastWeekExpanded') !== 'false'; } catch { return true; }
+    });
+    const [sbEarlierExpanded, setSbEarlierExpanded] = React.useState(() => {
+        try { return localStorage.getItem('sbEarlierExpanded') !== 'false'; } catch { return true; }
+    });
+
+    const sidebarDateSections: { key: string; label: string; transactions: typeof sidebarTransactions; expanded: boolean; setExpanded: (v: boolean) => void; storageKey: string; color?: string }[] = [
+        { key: 'upcoming', label: 'Upcoming', transactions: sidebarUpcoming, expanded: sbUpcomingExpanded, setExpanded: setSbUpcomingExpanded, storageKey: 'sbUpcomingExpanded', color: 'success' },
+        { key: 'today', label: 'Today', transactions: sidebarTodayTx, expanded: sbTodayExpanded, setExpanded: setSbTodayExpanded, storageKey: 'sbTodayExpanded' },
+        { key: 'yesterday', label: 'Yesterday', transactions: sidebarYesterdayTx, expanded: sbYesterdayExpanded, setExpanded: setSbYesterdayExpanded, storageKey: 'sbYesterdayExpanded' },
+        { key: 'lastWeek', label: 'Last Week', transactions: sidebarLastWeekTx, expanded: sbLastWeekExpanded, setExpanded: setSbLastWeekExpanded, storageKey: 'sbLastWeekExpanded' },
+        { key: 'earlier', label: 'Earlier', transactions: sidebarEarlierTx, expanded: sbEarlierExpanded, setExpanded: setSbEarlierExpanded, storageKey: 'sbEarlierExpanded' },
+    ];
 
     const handleMonthChange = (newValue: any) => {
         if (!newValue) return;
@@ -511,39 +549,68 @@ export default function BudgetPage() {
                                     disabled={offline}
                                 />
                             </Box>
-                            <List dense sx={{ maxHeight: 400, overflow: 'auto' }}>
-                                {sidebarTransactions.length > 0 ? sidebarTransactions.map((row) => (
-                                    <React.Fragment key={row.recordID}>
-                                        <Divider />
-                                        <ListItem disablePadding>
-                                            <ListItemButton onClick={() => {
-                                                setCurrentTransaction(row.recordID);
-                                                setOpenEditTransaction(true);
-                                            }}>
-                                                <Grid container columnSpacing={1} alignItems='center' sx={{ width: '100%' }}>
-                                                    <Grid size={1.5}>
-                                                        <Avatar sx={{ fontSize: 13, textAlign: 'center', bgcolor: 'primary.light', width: 36, height: 36 }}>
-                                                            {dayjs(row.transactionDate).format('MMM DD')}
-                                                        </Avatar>
-                                                    </Grid>
-                                                    <Grid size='grow'>
-                                                        <Typography variant='body2'>{row.title}</Typography>
-                                                    </Grid>
-                                                    <Grid size='auto'>
-                                                        <Typography variant='body2'>
-                                                            {(row.transactionType === 'expense' ? '-' : '+') + formatter.format(row.amount)}
-                                                        </Typography>
-                                                    </Grid>
-                                                </Grid>
-                                            </ListItemButton>
-                                        </ListItem>
-                                    </React.Fragment>
-                                )) : (
-                                    <ListItem>
-                                        <Typography variant='body2' color='text.secondary'>No transactions yet</Typography>
-                                    </ListItem>
+                            <Box sx={{ maxHeight: 400, overflow: 'auto', px: 0.5, pb: 1 }}>
+                                {sidebarTransactions.length > 0 ? (
+                                    <Stack spacing={1}>
+                                        {sidebarDateSections.filter(s => s.transactions.length > 0).map(section => (
+                                            <Box key={section.key}>
+                                                <Box
+                                                    onClick={() => { const next = !section.expanded; section.setExpanded(next); try { localStorage.setItem(section.storageKey, String(next)); } catch { } }}
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        cursor: 'pointer',
+                                                        mb: 0.5,
+                                                        px: 0.5,
+                                                        py: 0.25,
+                                                        borderRadius: 1,
+                                                        '&:hover': { opacity: 0.7 },
+                                                    }}
+                                                >
+                                                    {section.expanded ? <ExpandLessIcon fontSize="small" color={section.color as any || undefined} /> : <ExpandMoreIcon fontSize="small" color={section.color as any || undefined} />}
+                                                    <Typography variant="body2" color={section.color ? `${section.color}.main` : 'text.secondary'} sx={{ ml: 0.5, fontWeight: 600 }}>
+                                                        {section.label} ({section.transactions.length})
+                                                    </Typography>
+                                                </Box>
+                                                <Collapse in={section.expanded}>
+                                                    <Paper elevation={2} sx={{ borderRadius: 2 }}>
+                                                        <List dense disablePadding>
+                                                            {section.transactions.map((row, index, arr) => (
+                                                                <React.Fragment key={row.recordID}>
+                                                                    <ListItem disablePadding divider={index < arr.length - 1}>
+                                                                        <ListItemButton onClick={() => {
+                                                                            setCurrentTransaction(row.recordID);
+                                                                            setOpenEditTransaction(true);
+                                                                        }}>
+                                                                            <Grid container columnSpacing={1} alignItems='center' sx={{ width: '100%' }}>
+                                                                                <Grid size={1.5}>
+                                                                                    <Avatar sx={{ fontSize: 13, textAlign: 'center', bgcolor: 'text.secondary', width: 36, height: 36 }}>
+                                                                                        {dayjs(row.transactionDate).format('MMM DD')}
+                                                                                    </Avatar>
+                                                                                </Grid>
+                                                                                <Grid size='grow'>
+                                                                                    <Typography variant='body2' sx={{ ml: 0.5 }} style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{row.title}</Typography>
+                                                                                </Grid>
+                                                                                <Grid size='auto'>
+                                                                                    <Typography variant='body2' color={row.transactionType === 'expense' ? 'error.main' : 'success.main'}>
+                                                                                        {(row.transactionType === 'expense' ? '-' : '+') + formatter.format(row.amount)}
+                                                                                    </Typography>
+                                                                                </Grid>
+                                                                            </Grid>
+                                                                        </ListItemButton>
+                                                                    </ListItem>
+                                                                </React.Fragment>
+                                                            ))}
+                                                        </List>
+                                                    </Paper>
+                                                </Collapse>
+                                            </Box>
+                                        ))}
+                                    </Stack>
+                                ) : (
+                                    <Typography variant='body2' color='text.secondary' sx={{ px: 1 }}>No transactions yet</Typography>
                                 )}
-                            </List>
+                            </Box>
                         </Paper>
                     </Box>
                 )}
