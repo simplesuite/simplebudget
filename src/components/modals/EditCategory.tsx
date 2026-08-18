@@ -28,11 +28,13 @@ import EditIcon from '@mui/icons-material/Edit';
 import Grow from '@mui/material/Grow';
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
-import Divider from "@mui/material/Divider";
 import ListItemButton from "@mui/material/ListItemButton";
 import Avatar from "@mui/material/Avatar";
 import dayjs from "dayjs";
 import Paper from "@mui/material/Paper";
+import Collapse from '@mui/material/Collapse';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import AddIcon from "@mui/icons-material/Add";
 import Fab from "@mui/material/Fab";
 import GlobalJS from "../extras/GlobalJS";
@@ -161,6 +163,49 @@ export default function EditCategory() {
     }
 
     const handleFocus = (event: any) => { if (event) event.target.select(); };
+
+    // Date buckets for category transactions
+    const categoryTransactions = transactionsArray
+        .filter(x => x.categoryID === currentCategoryDetails?.recordID)
+        .sort((a, b) => b.transactionDate - a.transactionDate);
+
+    const today = dayjs().startOf('day');
+    const yesterday = today.subtract(1, 'day');
+    const lastWeekStart = today.subtract(7, 'day');
+
+    const upcomingTransactions = categoryTransactions.filter(t => dayjs(t.transactionDate).isAfter(today.endOf('day')));
+    const todayTransactions = categoryTransactions.filter(t => dayjs(t.transactionDate).isSame(today, 'day'));
+    const yesterdayTransactions = categoryTransactions.filter(t => dayjs(t.transactionDate).isSame(yesterday, 'day'));
+    const lastWeekTransactions = categoryTransactions.filter(t => {
+        const d = dayjs(t.transactionDate);
+        return d.isBefore(yesterday) && (d.isAfter(lastWeekStart) || d.isSame(lastWeekStart, 'day'));
+    });
+    const earlierTransactions = categoryTransactions.filter(t => dayjs(t.transactionDate).isBefore(lastWeekStart));
+
+    // Section collapse states
+    const [upcomingExpanded, setUpcomingExpanded] = React.useState(() => {
+        try { return localStorage.getItem('ecUpcomingExpanded') !== 'false'; } catch { return true; }
+    });
+    const [todayExpanded, setTodayExpanded] = React.useState(() => {
+        try { return localStorage.getItem('ecTodayExpanded') !== 'false'; } catch { return true; }
+    });
+    const [yesterdayExpanded, setYesterdayExpanded] = React.useState(() => {
+        try { return localStorage.getItem('ecYesterdayExpanded') !== 'false'; } catch { return true; }
+    });
+    const [lastWeekExpanded, setLastWeekExpanded] = React.useState(() => {
+        try { return localStorage.getItem('ecLastWeekExpanded') !== 'false'; } catch { return true; }
+    });
+    const [earlierExpanded, setEarlierExpanded] = React.useState(() => {
+        try { return localStorage.getItem('ecEarlierExpanded') !== 'false'; } catch { return true; }
+    });
+
+    const dateSections = [
+        { key: 'upcoming', label: 'Upcoming', transactions: upcomingTransactions, expanded: upcomingExpanded, setExpanded: setUpcomingExpanded, storageKey: 'ecUpcomingExpanded', color: 'success' },
+        { key: 'today', label: 'Today', transactions: todayTransactions, expanded: todayExpanded, setExpanded: setTodayExpanded, storageKey: 'ecTodayExpanded' },
+        { key: 'yesterday', label: 'Yesterday', transactions: yesterdayTransactions, expanded: yesterdayExpanded, setExpanded: setYesterdayExpanded, storageKey: 'ecYesterdayExpanded' },
+        { key: 'lastWeek', label: 'Last Week', transactions: lastWeekTransactions, expanded: lastWeekExpanded, setExpanded: setLastWeekExpanded, storageKey: 'ecLastWeekExpanded' },
+        { key: 'earlier', label: 'Earlier', transactions: earlierTransactions, expanded: earlierExpanded, setExpanded: setEarlierExpanded, storageKey: 'ecEarlierExpanded' },
+    ];
 
     React.useEffect(() => {
         if (!openEditCategory) return;
@@ -296,47 +341,69 @@ export default function EditCategory() {
                                     </Grow>
                                 </Grid> : null}
                             <Grid size={12} container>
-                                <Paper elevation={5} sx={{ width: '100%', borderRadius: 3 }}>
-                                    <List dense>
-                                        {transactionsArray.filter(x => x.categoryID === currentCategoryDetails?.recordID).length > 0 ?
-                                            <>
-                                                <ListItem disablePadding key="1">
-                                                    <Typography color='text.secondary' variant='h6' sx={{ fontWeight: '600', ml: 1 }}>Tracked</Typography>
-                                                </ListItem>
-                                                {transactionsArray.filter(x => x.categoryID === currentCategoryDetails?.recordID).sort(
-                                                    (a, b) => b.transactionDate - a.transactionDate
-                                                ).map((row) => (
-                                                    <React.Fragment key={row.recordID}>
-                                                        <Divider />
-                                                        <ListItem disablePadding>
-                                                            <ListItemButton onClick={() => openTransaction(row.recordID)}>
-                                                                <Grid container columnSpacing={1} alignItems='center' sx={{ width: '100%' }}>
-                                                                    <Grid size={1.3}>
-                                                                        <Avatar sx={{ ml: -1, fontSize: 15, textAlign: 'center', bgcolor: 'primary.light' }}>
-                                                                            {dayjs(row.transactionDate).format('MMM DD')}
-                                                                        </Avatar>
-                                                                    </Grid>
-                                                                    <Grid size='grow'>
-                                                                        <Typography sx={{ mt: 0.5 }} variant='body1'>{row.title}</Typography>
-                                                                    </Grid>
-                                                                    <Grid size="auto" sx={{ textAlign: 'right' }}>
-                                                                        <Typography variant='body1'>
-                                                                            {(row.transactionType === 'expense' ? '-' : '+') + formatter.format(row.amount)}
-                                                                        </Typography>
-                                                                    </Grid>
-                                                                </Grid>
-                                                            </ListItemButton>
-                                                        </ListItem>
-                                                    </React.Fragment>
-                                                ))}
-                                            </>
-                                            :
-                                            <ListItem disablePadding key="2">
+                                {categoryTransactions.length > 0 ? (
+                                    <Stack spacing={1.5} sx={{ width: '100%' }}>
+                                        {dateSections.filter(s => s.transactions.length > 0).map(section => (
+                                            <Box key={section.key}>
+                                                <Box
+                                                    onClick={() => { const next = !section.expanded; section.setExpanded(next); try { localStorage.setItem(section.storageKey, String(next)); } catch { } }}
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        cursor: 'pointer',
+                                                        mb: 0.5,
+                                                        px: 1,
+                                                        py: 0.5,
+                                                        borderRadius: 1,
+                                                        '&:hover': { opacity: 0.7 },
+                                                    }}
+                                                >
+                                                    {section.expanded ? <ExpandLessIcon fontSize="small" color={section.color as any || undefined} /> : <ExpandMoreIcon fontSize="small" color={section.color as any || undefined} />}
+                                                    <Typography variant="body2" color={section.color ? `${section.color}.main` : 'text.secondary'} sx={{ ml: 0.5, fontWeight: 600 }}>
+                                                        {section.label} ({section.transactions.length})
+                                                    </Typography>
+                                                </Box>
+                                                <Collapse in={section.expanded}>
+                                                    <Paper elevation={4} sx={{ width: '100%', borderRadius: 3 }}>
+                                                        <List dense disablePadding>
+                                                            {section.transactions.map((row, index, arr) => (
+                                                                <React.Fragment key={row.recordID}>
+                                                                    <ListItem disablePadding divider={index < arr.length - 1}>
+                                                                        <ListItemButton onClick={() => openTransaction(row.recordID)}>
+                                                                            <Grid container columnSpacing={1} alignItems='center' sx={{ width: '100%' }}>
+                                                                                <Grid size={1.3}>
+                                                                                    <Avatar sx={{ ml: -1, fontSize: 15, textAlign: 'center', bgcolor: 'text.secondary' }}>
+                                                                                        {dayjs(row.transactionDate).format('MMM DD')}
+                                                                                    </Avatar>
+                                                                                </Grid>
+                                                                                <Grid size='grow'>
+                                                                                    <Typography sx={{ mt: 0.5, ml: 0.5 }} style={{ overflow: "hidden", textOverflow: "ellipsis" }} variant='body1'>{row.title}</Typography>
+                                                                                </Grid>
+                                                                                <Grid size="auto" sx={{ textAlign: 'right' }}>
+                                                                                    <Typography color={row.transactionType === 'expense' ? 'error.main' : 'success.main'} style={{ overflow: "hidden", textOverflow: "ellipsis" }} display='inline' variant='body1'>
+                                                                                        {(row.transactionType === 'expense' ? '-' : '+') + formatter.format(row.amount)}
+                                                                                    </Typography>
+                                                                                </Grid>
+                                                                            </Grid>
+                                                                        </ListItemButton>
+                                                                    </ListItem>
+                                                                </React.Fragment>
+                                                            ))}
+                                                        </List>
+                                                    </Paper>
+                                                </Collapse>
+                                            </Box>
+                                        ))}
+                                    </Stack>
+                                ) : (
+                                    <Paper elevation={5} sx={{ width: '100%', borderRadius: 3 }}>
+                                        <List dense>
+                                            <ListItem disablePadding>
                                                 <Typography color='text.secondary' variant='h6' sx={{ fontWeight: '600', ml: 1 }}>Nothing Tracked Here</Typography>
                                             </ListItem>
-                                        }
-                                    </List>
-                                </Paper>
+                                        </List>
+                                    </Paper>
+                                )}
                             </Grid>
                         </Grid>
                     </DialogContent>
