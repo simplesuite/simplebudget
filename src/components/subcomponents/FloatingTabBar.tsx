@@ -33,7 +33,7 @@ export default function FloatingTabBar({ unCategorized = 0 }: FloatingTabBarProp
         () => [
             { label: 'Budget', to: '/budget', match: /^\/budget/, icon: <DashboardIcon sx={{ fontSize: 22 }} /> },
             {
-                label: 'Transactions',
+                label: 'Txns',
                 to: '/transactions',
                 match: /^\/transactions/,
                 icon: (
