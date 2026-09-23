@@ -118,7 +118,6 @@ export default function FloatingTabBar({ unCategorized = 0 }: FloatingTabBarProp
                             flexDirection: 'row',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: 0.5,
                             px: 1,
                             textDecoration: 'none',
                             transition: 'color 0.28s ease',
@@ -131,7 +130,20 @@ export default function FloatingTabBar({ unCategorized = 0 }: FloatingTabBarProp
                         {tab.icon}
                         <Box
                             component="span"
-                            sx={{ fontSize: 11, fontWeight: 600, lineHeight: 1 }}
+                            sx={{
+                                fontSize: 11,
+                                fontWeight: 600,
+                                lineHeight: 1,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                // Only reveal the label for the active tab; inactive
+                                // tabs collapse to just their icon to save width.
+                                maxWidth: active ? 120 : 0,
+                                opacity: active ? 1 : 0,
+                                ml: active ? 0.5 : 0,
+                                transition:
+                                    'max-width 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease, margin-left 0.28s cubic-bezier(0.22, 1, 0.36, 1)',
+                            }}
                         >
                             {tab.label}
                         </Box>
