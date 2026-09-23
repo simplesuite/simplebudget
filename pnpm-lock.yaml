@@ -105,6 +105,12 @@ importers:
       vitest:
         specifier: ^4.1.2
         version: 4.1.10(@types/node@22.20.1)(happy-dom@20.10.6)(vite@8.1.4(@types/node@22.20.1)(terser@5.49.0))
+      workbox-core:
+        specifier: ^7.4.1
+        version: 7.4.1
+      workbox-precaching:
+        specifier: ^7.4.1
+        version: 7.4.1
       workbox-window:
         specifier: ^7.4.0
         version: 7.4.1

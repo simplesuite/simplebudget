@@ -185,7 +185,6 @@ export default function TransactionsPage() {
                     <TextField
                         fullWidth
                         size='small'
-                        variant='filled'
                         value={searchText}
                         onChange={(event: any) => setText(event)}
                         type="search"
