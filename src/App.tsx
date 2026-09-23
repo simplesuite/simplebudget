@@ -19,17 +19,8 @@ import Toolbar from '@mui/material/Toolbar';
 import { Navigate, Outlet } from "react-router-dom";
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { AlertProps } from '@mui/material/Alert';
-import BottomNavigation from '@mui/material/BottomNavigation';
-import BottomNavigationAction from '@mui/material/BottomNavigationAction';
-import Paper from '@mui/material/Paper';
-import SettingsIcon from '@mui/icons-material/Settings';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import PaidIcon from '@mui/icons-material/Paid';
-import AssessmentIcon from '@mui/icons-material/Assessment';
-import { redirect, useLocation } from "react-router-dom";
-import {
-  Link as RouterLink,
-} from 'react-router-dom';
+import FloatingTabBar from './components/subcomponents/FloatingTabBar';
+import { useLocation } from "react-router-dom";
 import AddBudget from "./components/modals/AddBudget";
 import {
   supaBudgetsByCreator,
@@ -55,7 +46,7 @@ import { checkAndNotify } from "./lib/notifications";
 
 const fabStyle = {
   position: 'fixed',
-  bottom: 75,
+  bottom: 90,
   right: 16,
 };
 
@@ -77,7 +68,6 @@ export default function App() {
   const snackOpen = useGlobalStore(s => s.snackBarOpen);
   const setSnackOpen = useGlobalStore(s => s.setSnackBarOpen);
   const [actTheme, setTheme] = React.useState(themes.darkTheme);
-  const [tabValue, setTabValue] = React.useState(location.pathname);
   const setBudgetArray = useTableStore(s => s.setBudgets)
   const setAddNewTransaction = useModalStore(s => s.setAddTransaction)
   const setSelectBudget = useModalStore(s => s.setSelectBudget)
@@ -321,34 +311,29 @@ export default function App() {
         <Box sx={{
           display: 'flex',
           minHeight: window.innerHeight,
-          backgroundImage: (currentTheme === 'dark' ? 'linear-gradient(to bottom right, #161616, #252525)' : 'linear-gradient(to bottom right,#eee,#fff)'),
-          bgcolor: (currentTheme === 'dark' ? '#171717' : 'grey.100')
+          bgcolor: 'background.default',
         }}>
           <Box sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}><AppToolbar /></Box>
           <Box component="main"
-            sx={{ width: '100%', p: 2, mb: 8, height: '100%', paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))' }}>
+            sx={{ width: '100%', p: 2, mb: 11, height: '100%', paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))' }}>
             <Toolbar /><Outlet />
           </Box>
-          <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} elevation={3}>
-            {matches ? null : <Fab color='secondary' sx={{ alignSelf: 'center', position: 'absolute', zIndex: 1, left: '50%', transform: 'translateX(-50%)', bottom: 'calc(35px + env(safe-area-inset-bottom, 0px))' }} size="medium"
-              onClick={() => setAddNewTransaction(true)}><AddIcon /></Fab>}
-            <BottomNavigation
-              showLabels
-              value={tabValue}
-              onChange={(event, newValue: string) => {
-                setTabValue(newValue);
-                redirect("/" + newValue)
-              }}>
-              <BottomNavigationAction label="Budget" value='/budget' component={RouterLink} to="budget" icon={<DashboardIcon />} />
-              <BottomNavigationAction label="Transactions" value='/transactions' component={RouterLink} to="transactions" icon={<Badge badgeContent={unCategorized} color="secondary"><PaidIcon /></Badge>} />
-              <BottomNavigationAction label="Analytics" value='/analytics' component={RouterLink} to="analytics" icon={<AssessmentIcon />} />
-              <BottomNavigationAction label="Settings" value='/settings' component={RouterLink} to="settings" icon={<SettingsIcon />} />
-            </BottomNavigation>
-          </Paper>
+          <FloatingTabBar unCategorized={unCategorized} />
         </Box>
-        {matches ? <Fab color="secondary" variant='extended' sx={fabStyle} onClick={() => setAddNewTransaction(true)}>
-          <AddIcon /> Add Transaction
-        </Fab> : null}
+        {matches ? (
+          <Fab color="secondary" variant='extended' sx={fabStyle} onClick={() => setAddNewTransaction(true)}>
+            <AddIcon /> Add Transaction
+          </Fab>
+        ) : (
+          <Fab
+            color='secondary'
+            size="medium"
+            sx={{ position: 'fixed', right: 16, bottom: 'calc(90px + env(safe-area-inset-bottom, 0px))', zIndex: (theme) => theme.zIndex.appBar + 1 }}
+            onClick={() => setAddNewTransaction(true)}
+          >
+            <AddIcon />
+          </Fab>
+        )}
         <Snackbar open={snackOpen} autoHideDuration={2000} onClose={snackClose} sx={{ mb: 8 }}>
           {/*@ts-ignore*/}
           <Alert onClose={snackClose} severity={snackSev} sx={{ width: '100%' }}>
