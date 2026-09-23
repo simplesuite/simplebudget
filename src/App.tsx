@@ -43,6 +43,7 @@ import { hasSupabaseSession, supabase } from "./lib/supabase";
 import { initOfflineSync } from "./lib/offlineSync";
 import { ensureUserRecord } from "./components/extras/ensureUserRecord";
 import { checkAndNotify } from "./lib/notifications";
+import { useIsPwa } from "./lib/useIsPwa";
 
 const fabStyle = {
   position: 'fixed',
@@ -64,6 +65,7 @@ export default function App() {
   const snackText = useGlobalStore(s => s.snackBarText);
   const theme = useTheme();
   const matches = useMediaQuery(theme.breakpoints.up('sm'));
+  const isPwa = useIsPwa();
   const snackSev = useGlobalStore(s => s.snackBarSeverity);
   const snackOpen = useGlobalStore(s => s.snackBarOpen);
   const setSnackOpen = useGlobalStore(s => s.setSnackBarOpen);
@@ -313,10 +315,10 @@ export default function App() {
           minHeight: window.innerHeight,
           bgcolor: 'background.default',
         }}>
-          <Box sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}><AppToolbar /></Box>
+          <Box sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>{!isPwa && <AppToolbar />}</Box>
           <Box component="main"
             sx={{ width: '100%', p: 2, mb: 11, height: '100%', paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))' }}>
-            <Toolbar /><Outlet />
+            {!isPwa && <Toolbar />}<Outlet />
           </Box>
           <FloatingTabBar unCategorized={unCategorized} />
         </Box>
