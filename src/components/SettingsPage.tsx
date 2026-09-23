@@ -50,6 +50,7 @@ import TextField from '@mui/material/TextField';
 import { useNotificationStore } from '../store/notificationStore';
 import { notificationsSupported, requestNotificationPermission } from '../lib/notifications';
 import { pushSupported, subscribeToPush, unsubscribeFromPush } from '../lib/pushSubscription';
+import ConnectionCard from './subcomponents/ConnectionCard';
 
 function getInitials(name: string | null): string {
     if (!name) return '?';
@@ -318,6 +319,9 @@ export default function SettingsPage() {
         <>
             <Box display="flex" flexDirection="column" alignItems="center" sx={{ pb: 4 }}>
                 <Stack spacing={2.5} alignItems="stretch" sx={{ maxWidth: 560, width: '100%' }}>
+
+                    {/* ─── Connection Card ─── */}
+                    <ConnectionCard />
 
                     {/* ─── Profile Card ─── */}
                     <Paper elevation={4} sx={{ borderRadius: 4, p: 3 }}>
