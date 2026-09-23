@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#4c809e" />
+    <meta name="theme-color" content="#161719" />
     <meta name="description" content="A simple budget app to track your income and expenses." />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -15,13 +15,15 @@
     <script>
         try {
             var t = localStorage.getItem('userTheme');
-            if (t === 'light') document.documentElement.style.backgroundColor = '#eee';
-            else document.documentElement.style.backgroundColor = '#161616';
+            var color = t === 'light' ? '#f8fafc' : '#161719';
+            document.documentElement.style.backgroundColor = color;
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', color);
         } catch (e) { }
     </script>
 </head>
 
-<body style="background-color:#161616">
+<body style="background-color:#161719">
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
     <!-- Self-hosted config: edit public/config.js to set a default backend for all users -->
