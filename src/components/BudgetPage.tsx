@@ -36,6 +36,8 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
 import Avatar from '@mui/material/Avatar';
 import Grid from '@mui/material/Grid';
 import useCategoryActions from "./extras/useCategoryActions";
@@ -72,7 +74,7 @@ export default function BudgetPage() {
     const sectionsArray = useTableStore(s => s.sections)
     const transactionsArray = useTableStore(s => s.transactions)
     const setOpenCopyBudget = useModalStore(s => s.setCopyBudget)
-    const { balanceCategory, allocateRestOfBudget, promptDeleteCategory, deleteCategory, updateCategory } = useCategoryActions();
+    const { balanceCategory, allocateRestOfBudget, promptDeleteCategory, deleteCategory, updateCategory, balanceTarget, allocateTarget, currentSectionType } = useCategoryActions();
     const offline = useIsOffline();
     const [sidebarAnchorEl, setSidebarAnchorEl] = React.useState<null | HTMLElement>(null);
     const sidebarMenuOpen = Boolean(sidebarAnchorEl);
@@ -820,11 +822,21 @@ export default function BudgetPage() {
                 }}>
                     <EditIcon sx={{ mr: 1 }} />Edit Category
                 </MenuItem>
-                <MenuItem onClick={() => { setSidebarAnchorEl(null); balanceCategory(); }} disabled={offline}>
-                    <BalanceIcon sx={{ mr: 1 }} />Balance Category
+                <MenuItem onClick={() => { setSidebarAnchorEl(null); balanceCategory(); }} disabled={offline} sx={{ alignItems: 'flex-start', py: 1, maxWidth: 320, whiteSpace: 'normal' }}>
+                    <ListItemIcon sx={{ mt: 0.5 }}><BalanceIcon fontSize='small' /></ListItemIcon>
+                    <ListItemText
+                        primary='Balance Category'
+                        secondary={`Set the planned amount to match what you've ${currentSectionType === 'income' ? 'earned' : 'spent'} so far (${formatter.format(balanceTarget)}).`}
+                        secondaryTypographyProps={{ variant: 'caption' }}
+                    />
                 </MenuItem>
-                <MenuItem onClick={() => { setSidebarAnchorEl(null); allocateRestOfBudget(); }} disabled={offline}>
-                    <AccountBalanceWalletIcon sx={{ mr: 1 }} />Allocate Rest of Budget
+                <MenuItem onClick={() => { setSidebarAnchorEl(null); allocateRestOfBudget(); }} disabled={offline} sx={{ alignItems: 'flex-start', py: 1, maxWidth: 320, whiteSpace: 'normal' }}>
+                    <ListItemIcon sx={{ mt: 0.5 }}><AccountBalanceWalletIcon fontSize='small' /></ListItemIcon>
+                    <ListItemText
+                        primary='Allocate Rest of Budget'
+                        secondary={`Assign all unbudgeted income to this category (${formatter.format(allocateTarget)}).`}
+                        secondaryTypographyProps={{ variant: 'caption' }}
+                    />
                 </MenuItem>
                 <MenuItem onClick={() => { setSidebarAnchorEl(null); setPendingDelete(true); promptDeleteCategory(); }} disabled={offline}>
                     <DeleteIcon sx={{ mr: 1 }} />Delete Category

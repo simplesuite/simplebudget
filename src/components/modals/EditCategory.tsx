@@ -29,6 +29,8 @@ import Grow from '@mui/material/Grow';
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
 import Avatar from "@mui/material/Avatar";
 import dayjs from "dayjs";
 import Paper from "@mui/material/Paper";
@@ -80,6 +82,8 @@ export default function EditCategory() {
         updateCategory,
         currentSection,
         currentSectionType,
+        balanceTarget,
+        allocateTarget,
     } = useCategoryActions();
 
     const { oneMonthAgo, oneYearAgo, loading: histLoading } = useHistoricalBudget(
@@ -395,11 +399,21 @@ export default function EditCategory() {
                 <MenuItem onClick={() => { setAnchorEl(null); setEditMode(!editMode); }}>
                     <EditIcon sx={{ mr: 1 }} />Edit Category
                 </MenuItem>
-                <MenuItem onClick={handleBalanceClick} disabled={offline}>
-                    <BalanceIcon sx={{ mr: 1 }} />Balance Category
+                <MenuItem onClick={handleBalanceClick} disabled={offline} sx={{ alignItems: 'flex-start', py: 1, maxWidth: 320, whiteSpace: 'normal' }}>
+                    <ListItemIcon sx={{ mt: 0.5 }}><BalanceIcon fontSize='small' /></ListItemIcon>
+                    <ListItemText
+                        primary='Balance Category'
+                        secondary={`Set the planned amount to match what you've ${currentSectionType === 'income' ? 'earned' : 'spent'} so far (${formatter.format(balanceTarget)}).`}
+                        secondaryTypographyProps={{ variant: 'caption' }}
+                    />
                 </MenuItem>
-                <MenuItem onClick={handleAllocateClick} disabled={offline}>
-                    <AccountBalanceWalletIcon sx={{ mr: 1 }} />Allocate Rest of Budget
+                <MenuItem onClick={handleAllocateClick} disabled={offline} sx={{ alignItems: 'flex-start', py: 1, maxWidth: 320, whiteSpace: 'normal' }}>
+                    <ListItemIcon sx={{ mt: 0.5 }}><AccountBalanceWalletIcon fontSize='small' /></ListItemIcon>
+                    <ListItemText
+                        primary='Allocate Rest of Budget'
+                        secondary={`Assign all unbudgeted income to this category (${formatter.format(allocateTarget)}).`}
+                        secondaryTypographyProps={{ variant: 'caption' }}
+                    />
                 </MenuItem>
                 <MenuItem onClick={handleDeleteClick} disabled={offline}>
                     <DeleteIcon sx={{ mr: 1 }} />Delete Category
