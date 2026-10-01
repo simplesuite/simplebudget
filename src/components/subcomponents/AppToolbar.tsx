@@ -9,15 +9,24 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import Chip from '@mui/material/Chip';
 import CloudOffIcon from '@mui/icons-material/CloudOff';
 import { useOfflineStore } from "../../store/offlineStore";
+import { useTableStore } from "../../store/tableStore";
+import useGrabBudgetData from "../extras/GrabBudgetData";
 
 export default function AppToolbar() {
     const currentTheme = useGlobalStore(s => s.themeAtom);
     const isOnline = useOfflineStore(s => s.isOnline);
     const pendingCount = useOfflineStore(s => s.pendingCount);
     const isSyncing = useOfflineStore(s => s.isSyncing);
+    const { grabBudgetData } = useGrabBudgetData();
+    const currentBudget = useTableStore(s => s.currentBudgetAndMonth);
 
     async function handleRefresh() {
-        window.location.reload();
+        // Soft in-app re-fetch instead of a jarring full-page reload.
+        if (currentBudget?.budgetID) {
+            grabBudgetData(currentBudget.budgetID, currentBudget.year, currentBudget.month);
+        } else {
+            window.location.reload();
+        }
     }
 
     const offlineLabel = !isOnline

@@ -10,6 +10,9 @@ import CloudDoneIcon from '@mui/icons-material/CloudDone';
 import SyncIcon from '@mui/icons-material/Sync';
 import { keyframes } from '@mui/system';
 import { useOfflineStore } from '../../store/offlineStore';
+import { useTableStore } from '../../store/tableStore';
+import useGrabBudgetData from '../extras/GrabBudgetData';
+import { CARD_ELEVATION, cardSx } from './uiStyles';
 
 const spin = keyframes`
   from { transform: rotate(0deg); }
@@ -25,9 +28,16 @@ export default function ConnectionCard() {
     const isOnline = useOfflineStore(s => s.isOnline);
     const pendingCount = useOfflineStore(s => s.pendingCount);
     const isSyncing = useOfflineStore(s => s.isSyncing);
+    const { grabBudgetData } = useGrabBudgetData();
+    const currentBudget = useTableStore(s => s.currentBudgetAndMonth);
 
     const handleRefresh = () => {
-        window.location.reload();
+        // Soft in-app re-fetch instead of a jarring full-page reload.
+        if (currentBudget?.budgetID) {
+            grabBudgetData(currentBudget.budgetID, currentBudget.year, currentBudget.month);
+        } else {
+            window.location.reload();
+        }
     };
 
     const renderStatusChip = () => {
@@ -70,7 +80,7 @@ export default function ConnectionCard() {
     };
 
     return (
-        <Paper elevation={4} sx={{ borderRadius: 4, p: 3 }}>
+        <Paper elevation={CARD_ELEVATION} sx={{ ...cardSx, p: 3 }}>
             <Typography color="text.secondary" variant="subtitle2" sx={{ fontWeight: 800, mb: 2.5, textTransform: 'uppercase' }}>
                 Connection
             </Typography>
