@@ -50,6 +50,16 @@ import { useIsOffline } from "./extras/OfflineAlert";
 import { useHistoricalBudget } from "./extras/useHistoricalBudget";
 import { ensureUserRecord } from "./extras/ensureUserRecord";
 import HistoryIcon from '@mui/icons-material/History';
+import SwipeableNet from "./subcomponents/SwipeableNet";
+import CategorySummary from "./subcomponents/CategorySummary";
+import BudgetSectionSkeleton from "./subcomponents/BudgetSectionSkeleton";
+import EmptyState from "./subcomponents/EmptyState";
+import { rowHoverSx, cardSx, CARD_ELEVATION } from "./subcomponents/uiStyles";
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import TouchAppIcon from '@mui/icons-material/TouchApp';
+import Tooltip from '@mui/material/Tooltip';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { useIsPwa } from "../lib/useIsPwa";
 
 const formatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -74,6 +84,7 @@ export default function BudgetPage() {
     const areYouSureOpen = useModalStore(s => s.areYouSure);
     const checkAccept = useGlobalStore(s => s.areYouSureAccept);
     const setCheckAccept = useGlobalStore(s => s.setAreYouSureAccept);
+    const mainLoading = useGlobalStore(s => s.mainLoading);
     const { grabBudgetData } = useGrabBudgetData();
     const currentBudget = useTableStore(s => s.currentBudgetAndMonth)
     const setCurrentBudget = useTableStore(s => s.setCurrentBudgetAndMonth)
@@ -83,6 +94,25 @@ export default function BudgetPage() {
     const selectedMonth = dayjs(`${currentBudget.year}-${currentBudget.month}-01`, 'YYYY-MMMM-DD');
     const theme = useTheme();
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+    const isPwa = useIsPwa();
+    // When not running as a PWA, a fixed dense AppBar (48px) is shown; the sticky
+    // net card must clear it so it doesn't tuck underneath.
+    const stickyTop = isPwa
+        ? 'calc(8px + env(safe-area-inset-top, 0px))'
+        : 'calc(48px + 8px + env(safe-area-inset-top, 0px))';
+    // Detect when the net card is pinned so we can emphasize it while stuck.
+    const [netStuck, setNetStuck] = React.useState(false);
+    const netSentinelRef = React.useRef<HTMLDivElement>(null);
+    React.useEffect(() => {
+        const el = netSentinelRef.current;
+        if (!el || typeof IntersectionObserver === 'undefined') return;
+        const observer = new IntersectionObserver(
+            ([entry]) => setNetStuck(!entry.isIntersecting),
+            { threshold: 0 }
+        );
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, []);
     const selectedCategoryID = useModalStore(s => s.currentCategory);
     const selectedSectionID = useModalStore(s => s.currentSection);
     const setCurrentTransaction = useModalStore(s => s.setCurrentTransaction);
@@ -94,14 +124,6 @@ export default function BudgetPage() {
     const sidebarTransactions = transactionsArray
         .filter(t => t.categoryID === selectedCategoryID)
         .sort((a, b) => b.transactionDate - a.transactionDate);
-    const sidebarSpent = sidebarTransactions
-        .filter(t => t.transactionType === 'expense')
-        .reduce((a, t) => a + t.amount, 0);
-    const sidebarEarned = sidebarTransactions
-        .filter(t => t.transactionType === 'income')
-        .reduce((a, t) => a + t.amount, 0);
-    const sidebarTracked = Math.round((sidebarEarned - sidebarSpent) * 100) / 100;
-    const sidebarRemaining = selectedCategory ? selectedCategory.amount + sidebarTracked : 0;
 
     // Desktop sidebar: date buckets
     const sidebarToday = dayjs().startOf('day');
@@ -336,63 +358,157 @@ export default function BudgetPage() {
                                     <ChevronRightIcon />
                                 </IconButton>
                             </Box>
-                            <Paper elevation={4} sx={{ borderRadius: 3, mt: 2, p: 1.5 }}>
-                                {/* Planned bar */}
-                                <Box sx={{ mb: 2 }}>
-                                    <Typography variant='body1' color='text.secondary'>
-                                        Planned net: <strong style={{ color: totalIncome - totalExpenses < 0 ? theme.palette.error.main : theme.palette.success.main }}>
-                                            {formatter.format(totalIncome - totalExpenses)}
-                                        </strong>
-                                    </Typography>
-                                    <Box display='flex' justifyContent='space-between' alignItems='baseline' sx={{ mb: 0.25 }}>
-                                        <Typography variant='caption' color='text.secondary'>
-                                            {formatter.format(totalIncome)} in / {formatter.format(totalExpenses)} out
-                                        </Typography>
-                                    </Box>
-                                    <LinearProgress
-                                        variant="determinate"
-                                        value={Math.min(totalIncome > 0 ? (totalExpenses / totalIncome) * 100 : 0, 100)}
-                                        color={totalExpenses > totalIncome ? 'error' : 'warning'}
-                                        sx={{
-                                            height: 15,
-                                            borderRadius: 2,
-                                            [`& .MuiLinearProgress-bar`]: {
-                                                backgroundColor: alpha(
-                                                    totalExpenses > totalIncome ? theme.palette.error.main : theme.palette.warning.main,
-                                                    0.7
-                                                ),
-                                            },
-                                        }}
-                                    />
-                                </Box>
-                                {/* Tracked bar */}
-                                <Box>
-                                    <Typography variant='body1' color='text.secondary' sx={{ textAlign: 'left' }} >
-                                        Tracked net: <strong style={{ color: totalActualIncome - totalActualExpenses < 0 ? theme.palette.error.main : theme.palette.success.main }}>
-                                            {formatter.format(totalActualIncome - totalActualExpenses)}
-                                        </strong>
-                                    </Typography>
-                                    <Box display='flex' justifyContent='space-between' alignItems='baseline' sx={{ mb: 0.25 }}>
-                                        <Typography variant='caption' color='text.secondary'>
-                                            {formatter.format(totalActualIncome)} in / {formatter.format(totalActualExpenses)} out
-                                        </Typography>
-                                    </Box>
-                                    <LinearProgress
-                                        variant="determinate"
-                                        value={Math.min(totalActualIncome > 0 ? (totalActualExpenses / totalActualIncome) * 100 : 0, 100)}
-                                        color={totalActualExpenses > totalActualIncome ? 'error' : 'success'}
-                                        sx={{
-                                            height: 15,
-                                            borderRadius: 2,
-                                            [`& .MuiLinearProgress-bar`]: {
-                                                backgroundColor: alpha(
-                                                    totalActualExpenses > totalActualIncome ? theme.palette.error.main : theme.palette.success.main,
-                                                    0.7
-                                                ),
-                                            },
-                                        }}
-                                    />
-                                </Box>
+                        </Box>
+
+                        {/* Sentinel: when it scrolls out of view, the net card is pinned */}
+                        <Box ref={netSentinelRef} sx={{ height: 0 }} />
+
+                        <Box
+                            sx={{
+                                position: 'sticky',
+                                top: stickyTop,
+                                zIndex: (theme) => theme.zIndex.appBar - 1,
+                                mt: -1,
+                                pt: 1,
+                                backgroundColor: 'transparent',
+                            }}
+                        >
+                            {/* Top scrim: content fades out as it scrolls up toward the AppBar */}
+                            <Box
+                                sx={{
+                                    position: 'absolute',
+                                    left: 0,
+                                    right: 0,
+                                    top: -24,
+                                    height: 32,
+                                    background: (theme) =>
+                                        `linear-gradient(to top, ${alpha(theme.palette.background.default, 0)} 0%, ${theme.palette.background.default} 60%)`,
+                                    opacity: netStuck ? 1 : 0,
+                                    transition: 'opacity 0.2s ease',
+                                    pointerEvents: 'none',
+                                }}
+                            />
+                            {/* Bottom scrim: sections fade out as they scroll up into the card */}
+                            <Box
+                                sx={{
+                                    position: 'absolute',
+                                    left: 0,
+                                    right: 0,
+                                    bottom: -16,
+                                    height: 16,
+                                    background: (theme) =>
+                                        `linear-gradient(to bottom, ${theme.palette.background.default} 0%, ${alpha(theme.palette.background.default, 0)} 100%)`,
+                                    opacity: netStuck ? 1 : 0,
+                                    transition: 'opacity 0.2s ease',
+                                    pointerEvents: 'none',
+                                }}
+                            />
+                            <Paper
+                                elevation={netStuck ? 10 : 6}
+                                sx={{
+                                    position: 'relative',
+                                    borderRadius: 3,
+                                    p: 1.5,
+                                    border: '1px solid',
+                                    borderColor: (theme) => alpha(theme.palette.primary.main, netStuck ? 0.6 : 0.35),
+                                    // opaque base so content can't bleed through the card...
+                                    backgroundColor: 'background.paper',
+                                    // ...with a subtle primary tint on top so it reads as a header
+                                    backgroundImage: (theme) =>
+                                        `linear-gradient(180deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(theme.palette.primary.main, 0.02)} 100%)`,
+                                    boxShadow: (theme) =>
+                                        netStuck
+                                            ? `0 8px 24px ${alpha(theme.palette.common.black, 0.35)}, 0 0 0 1px ${alpha(theme.palette.primary.main, 0.25)}`
+                                            : undefined,
+                                    transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
+                                }}
+                            >
+                                <SwipeableNet
+                                    slides={[
+                                        (
+                                            // Planned panel
+                                            <Box key="planned">
+                                                <Box display='flex' alignItems='center' gap={0.5}>
+                                                    <Typography variant='body1' color='text.secondary'>
+                                                        Planned net (budgeted): <strong style={{ color: totalIncome - totalExpenses < 0 ? theme.palette.error.main : theme.palette.success.main }}>
+                                                            {formatter.format(totalIncome - totalExpenses)}
+                                                        </strong>
+                                                    </Typography>
+                                                    <Tooltip
+                                                        enterTouchDelay={0}
+                                                        leaveTouchDelay={4000}
+                                                        title="What you've budgeted this month: planned income minus planned expenses across all categories. A positive number means you planned to save; negative means you planned to spend more than you earn."
+                                                    >
+                                                        <IconButton size='small' sx={{ p: 0.25 }} aria-label="About planned net">
+                                                            <InfoOutlinedIcon fontSize='inherit' color='action' />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </Box>
+                                                <Box display='flex' justifyContent='space-between' alignItems='baseline' sx={{ mb: 0.25 }}>
+                                                    <Typography variant='caption' color='text.secondary'>
+                                                        {formatter.format(totalIncome)} in / {formatter.format(totalExpenses)} out
+                                                    </Typography>
+                                                </Box>
+                                                <LinearProgress
+                                                    variant="determinate"
+                                                    value={Math.min(totalIncome > 0 ? (totalExpenses / totalIncome) * 100 : 0, 100)}
+                                                    color={totalExpenses > totalIncome ? 'error' : 'warning'}
+                                                    sx={{
+                                                        height: 15,
+                                                        borderRadius: 2,
+                                                        [`& .MuiLinearProgress-bar`]: {
+                                                            backgroundColor: alpha(
+                                                                totalExpenses > totalIncome ? theme.palette.error.main : theme.palette.warning.main,
+                                                                0.7
+                                                            ),
+                                                        },
+                                                    }}
+                                                />
+                                            </Box>
+                                        ),
+                                        (
+                                            // Tracked panel
+                                            <Box key="tracked">
+                                                <Box display='flex' alignItems='center' gap={0.5}>
+                                                    <Typography variant='body1' color='text.secondary' sx={{ textAlign: 'left' }} >
+                                                        Actual net (so far): <strong style={{ color: totalActualIncome - totalActualExpenses < 0 ? theme.palette.error.main : theme.palette.success.main }}>
+                                                            {formatter.format(totalActualIncome - totalActualExpenses)}
+                                                        </strong>
+                                                    </Typography>
+                                                    <Tooltip
+                                                        enterTouchDelay={0}
+                                                        leaveTouchDelay={4000}
+                                                        title="What has actually happened: real income minus real expenses from the transactions you've logged this month. Compare this against your planned net to see how you're tracking."
+                                                    >
+                                                        <IconButton size='small' sx={{ p: 0.25 }} aria-label="About actual net">
+                                                            <InfoOutlinedIcon fontSize='inherit' color='action' />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </Box>
+                                                <Box display='flex' justifyContent='space-between' alignItems='baseline' sx={{ mb: 0.25 }}>
+                                                    <Typography variant='caption' color='text.secondary'>
+                                                        {formatter.format(totalActualIncome)} in / {formatter.format(totalActualExpenses)} out
+                                                    </Typography>
+                                                </Box>
+                                                <LinearProgress
+                                                    variant="determinate"
+                                                    value={Math.min(totalActualIncome > 0 ? (totalActualExpenses / totalActualIncome) * 100 : 0, 100)}
+                                                    color={totalActualExpenses > totalActualIncome ? 'error' : 'success'}
+                                                    sx={{
+                                                        height: 15,
+                                                        borderRadius: 2,
+                                                        [`& .MuiLinearProgress-bar`]: {
+                                                            backgroundColor: alpha(
+                                                                totalActualExpenses > totalActualIncome ? theme.palette.error.main : theme.palette.success.main,
+                                                                0.7
+                                                            ),
+                                                        },
+                                                    }}
+                                                />
+                                            </Box>
+                                        ),
+                                    ]}
+                                />
                             </Paper>
                         </Box>
 
@@ -431,6 +547,13 @@ export default function BudgetPage() {
                             </Alert>
                         )}
 
+                        {mainLoading && sectionsArray.length === 0 && (
+                            <>
+                                <BudgetSectionSkeleton rows={2} />
+                                <BudgetSectionSkeleton rows={4} />
+                                <BudgetSectionSkeleton rows={3} />
+                            </>
+                        )}
                         {sectionsArray.filter(x => x.sectionType === 'income').map((row) => (
                             <BudgetSection sectionID={row.recordID} key={row.recordID} />
                         )
@@ -442,7 +565,9 @@ export default function BudgetPage() {
                             <BudgetSection sectionID={row.recordID} key={row.recordID} />
                         )
                         )}
-                        <Button variant='outlined' color='secondary' startIcon={<PostAddIcon />} onClick={async () => { await ensureUserRecord(); setAddNewSection(true); }} disabled={offline}>Add Section</Button>
+                        {!(mainLoading && sectionsArray.length === 0) && (
+                            <Button variant='outlined' color='secondary' startIcon={<PostAddIcon />} onClick={async () => { await ensureUserRecord(); setAddNewSection(true); }} disabled={offline}>Add Section</Button>
+                        )}
                     </Stack>
                 </Box>
 
@@ -497,33 +622,15 @@ export default function BudgetPage() {
                                         <MoreVertIcon />
                                     </IconButton>
                                 </Box>
-                                <Box>
-                                    <Paper elevation={1} sx={{ borderRadius: 3, my: 1 }}>
-                                        <Box display='flex' alignItems='center' justifyContent='space-evenly' sx={{ width: '100%', p: 1, textAlign: 'center' }} gap={1}>
-                                            <Paper elevation={3} sx={{ px: 1, width: '100%' }}>
-                                                <Typography variant='body2' color='text.secondary'>
-                                                    Planned: <br /> {formatter.format(selectedCategory.amount)}
-                                                </Typography>
-                                            </Paper>
-                                            <Paper elevation={3} sx={{ px: 1, width: '100%' }}>
-                                                <Typography variant='body2' color='text.secondary'>
-                                                    Tracked: <br /> {formatter.format(Math.abs(sidebarTracked))}
-                                                </Typography>
-                                            </Paper>
-                                            <Paper elevation={3} sx={{ px: 1, width: '100%' }}>
-                                                <Typography
-                                                    variant='body2'
-                                                    sx={{ fontWeight: 'bold' }}
-                                                    color={sidebarRemaining < 0 ? 'error.main' : 'success.main'}
-                                                >
-                                                    Remaining: <br /> {formatter.format(sidebarRemaining)}
-                                                </Typography>
-                                            </Paper>
-                                        </Box>
-                                        <LinearProgress sx={{ height: 6, borderBottomRightRadius: 6, borderBottomLeftRadius: 6 }}
-                                            variant="determinate" color={sidebarSpent > selectedCategory.amount ? 'error' : 'success'}
-                                            value={Math.min((sidebarSpent / (selectedCategory.amount || 1)) * 100, 100)} />
-                                    </Paper>
+                                <Box sx={{ my: 1 }}>
+                                    <CategorySummary
+                                        planned={selectedCategory.amount}
+                                        transactions={sidebarTransactions}
+                                        isIncome={selectedSection?.sectionType === 'income'}
+                                        budgetMonth={currentBudget?.month}
+                                        budgetYear={currentBudget?.year}
+                                        dense
+                                    />
                                 </Box>
                             </Box>
                             <Box sx={{ px: 1.5, pb: 1, my: 1 }}>
@@ -578,7 +685,7 @@ export default function BudgetPage() {
                                                             {section.transactions.map((row, index, arr) => (
                                                                 <React.Fragment key={row.recordID}>
                                                                     <ListItem disablePadding divider={index < arr.length - 1}>
-                                                                        <ListItemButton onClick={() => {
+                                                                        <ListItemButton sx={rowHoverSx} onClick={() => {
                                                                             setCurrentTransaction(row.recordID);
                                                                             setOpenEditTransaction(true);
                                                                         }}>
@@ -608,9 +715,35 @@ export default function BudgetPage() {
                                         ))}
                                     </Stack>
                                 ) : (
-                                    <Typography variant='body2' color='text.secondary' sx={{ px: 1 }}>No transactions yet</Typography>
+                                    <EmptyState
+                                        dense
+                                        icon={<ReceiptLongIcon />}
+                                        title='No transactions yet'
+                                        description='Transactions in this category will appear here.'
+                                    />
                                 )}
                             </Box>
+                        </Paper>
+                    </Box>
+                )}
+
+                {isDesktop && !selectedCategory && (
+                    <Box sx={{ flex: '0 1 360px', position: 'sticky', top: 80, alignSelf: 'flex-start' }}>
+                        <Paper
+                            elevation={CARD_ELEVATION}
+                            sx={{
+                                ...cardSx,
+                                overflow: 'hidden',
+                                border: '1px dashed',
+                                borderColor: 'divider',
+                                bgcolor: 'transparent',
+                            }}
+                        >
+                            <EmptyState
+                                icon={<TouchAppIcon />}
+                                title='Select a category'
+                                description='Pick a category from your budget to see its details, notes, and recent transactions here.'
+                            />
                         </Paper>
                     </Box>
                 )}

@@ -20,6 +20,10 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import Collapse from '@mui/material/Collapse';
 import { alpha } from '@mui/material/styles';
+import EmptyState from "./subcomponents/EmptyState";
+import SearchOffIcon from '@mui/icons-material/SearchOff';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import { CARD_ELEVATION, cardSx, rowHoverSx } from "./subcomponents/uiStyles";
 
 const formatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -37,16 +41,30 @@ export default function TransactionsPage() {
         setSearchText(event.target.value)
         filterTransactions(event.target.value)
     }
-    const filterTransactions = (targetText: string) => {
-        if (targetText.length > 0) {
-            const filtered = transactionsArray.filter((data) => JSON.stringify({ [data.title]: data.amount }).toLowerCase().indexOf(targetText.toLowerCase()) !== -1);
-            setFilteredTransactions(filtered)
-        } else {
-            setFilteredTransactions(transactionsArray)
-        }
-    }
     const categoryArray = useTableStore(s => s.categories)
     const sectionsArray = useTableStore(s => s.sections)
+    const filterTransactions = (targetText: string) => {
+        const q = targetText.trim().toLowerCase();
+        if (q.length === 0) {
+            setFilteredTransactions(transactionsArray)
+            return
+        }
+        const filtered = transactionsArray.filter((data) => {
+            const category = categoryArray.find(c => c.recordID === data.categoryID)
+            const section = sectionsArray.find(s => s.recordID === category?.sectionID)
+            const haystack = [
+                data.title,
+                String(data.amount),
+                category?.categoryName,
+                section?.sectionName,
+            ]
+                .filter(Boolean)
+                .join(' ')
+                .toLowerCase()
+            return haystack.indexOf(q) !== -1
+        })
+        setFilteredTransactions(filtered)
+    }
     const setCurrentTransaction = useModalStore(s => s.setCurrentTransaction)
     const setOpenEditTransaction = useModalStore(s => s.setEditTransaction)
     const openTransaction = (trsID: string) => {
@@ -102,7 +120,7 @@ export default function TransactionsPage() {
     const renderCategorizedRow = (row: typeof categorizedTransactions[0], index: number, arr: typeof categorizedTransactions) => (
         <React.Fragment key={row.recordID}>
             <ListItem disablePadding divider={index < arr.length - 1}>
-                <ListItemButton onClick={() => openTransaction(row.recordID)}>
+                <ListItemButton onClick={() => openTransaction(row.recordID)} sx={rowHoverSx}>
                     <Grid size={12} container columnSpacing={1} alignItems='center' sx={{ width: '100%' }}>
                         <Grid size={1.3}>
                             <Avatar sx={{ ml: -1, fontSize: 15, textAlign: 'center', bgcolor: 'text.secondary' }}>
@@ -137,7 +155,7 @@ export default function TransactionsPage() {
     const renderUncategorizedRow = (row: typeof uncategorizedTransactions[0], index: number, arr: typeof uncategorizedTransactions) => (
         <React.Fragment key={row.recordID}>
             <ListItem disablePadding divider={index < arr.length - 1}>
-                <ListItemButton onClick={() => openTransaction(row.recordID)}>
+                <ListItemButton onClick={() => openTransaction(row.recordID)} sx={rowHoverSx}>
                     <Grid size={12} container columnSpacing={1} alignItems='center' sx={{ width: '100%' }}>
                         <Grid size={1.3}>
                             <Avatar sx={{ ml: -1, fontSize: 15, textAlign: 'center', bgcolor: 'text.secondary' }}>
@@ -199,7 +217,19 @@ export default function TransactionsPage() {
                         }}
                     />
 
-                    {transactionsArray.length > 0 ? (
+                    {transactionsArray.length === 0 ? (
+                        <EmptyState
+                            icon={<ReceiptLongIcon />}
+                            title='No transactions yet'
+                            description='Transactions you add will show up here, grouped by date.'
+                        />
+                    ) : filteredTransactions.length === 0 ? (
+                        <EmptyState
+                            icon={<SearchOffIcon />}
+                            title='No matches'
+                            description={`Nothing matched "${searchText.trim()}". Try a different search.`}
+                        />
+                    ) : (
                         <>
                             {uncategorizedTransactions.length > 0 && (
                                 <Box>
@@ -222,7 +252,7 @@ export default function TransactionsPage() {
                                         </Typography>
                                     </Box>
                                     <Collapse in={uncategorizedExpanded}>
-                                        <Paper elevation={4} sx={{ width: '100%', borderRadius: 3 }}>
+                                        <Paper elevation={CARD_ELEVATION} sx={{ ...cardSx, width: '100%' }}>
                                             <List dense disablePadding>
                                                 {uncategorizedTransactions.map((row, index, arr) => renderUncategorizedRow(row, index, arr))}
                                             </List>
@@ -252,7 +282,7 @@ export default function TransactionsPage() {
                                         </Typography>
                                     </Box>
                                     <Collapse in={section.expanded}>
-                                        <Paper elevation={4} sx={{ width: '100%', borderRadius: 3 }}>
+                                        <Paper elevation={CARD_ELEVATION} sx={{ ...cardSx, width: '100%' }}>
                                             <List dense disablePadding>
                                                 {section.transactions.map((row, index, arr) => renderCategorizedRow(row, index, arr))}
                                             </List>
@@ -261,8 +291,6 @@ export default function TransactionsPage() {
                                 </Box>
                             ))}
                         </>
-                    ) : (
-                        <Typography color='text.secondary' variant='h6' sx={{ fontWeight: '300', ml: 1 }}>Nothing here yet!</Typography>
                     )}
                 </Stack>
             </Box>

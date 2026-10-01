@@ -37,8 +37,10 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import AddIcon from "@mui/icons-material/Add";
 import Fab from "@mui/material/Fab";
-import GlobalJS from "../extras/GlobalJS";
-import LinearProgress from '@mui/material/LinearProgress';
+import CategorySummary from "../subcomponents/CategorySummary";
+import EmptyState from "../subcomponents/EmptyState";
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import { CARD_ELEVATION, cardSx, rowHoverSx } from "../subcomponents/uiStyles";
 import useCategoryActions from "../extras/useCategoryActions";
 import OfflineAlert, { useIsOffline } from "../extras/OfflineAlert";
 import { useHistoricalBudget } from "../extras/useHistoricalBudget";
@@ -59,6 +61,7 @@ export default function EditCategory() {
     const [categoryNote, setCategoryNote] = React.useState('');
     const [editMode, setEditMode] = React.useState(false);
     const transactionsArray = useTableStore(s => s.transactions);
+    const currentBudget = useTableStore(s => s.currentBudgetAndMonth);
     const currentCategoryID = useModalStore(s => s.currentCategory);
     const categoryArray = useTableStore(s => s.categories);
     const currentCategoryDetails = categoryArray.find(x => x.recordID === currentCategoryID);
@@ -68,8 +71,6 @@ export default function EditCategory() {
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const moreOpen = Boolean(anchorEl);
     const [categoryDelete, setCategoryDelete] = React.useState(false);
-    const [categorySum, setCategorySum] = React.useState(0);
-    const { grabCategorySum } = GlobalJS();
 
     const {
         balanceCategory,
@@ -94,13 +95,6 @@ export default function EditCategory() {
     const areYouSureOpen = useModalStore(s => s.areYouSure);
     const checkAccept = useGlobalStore(s => s.areYouSureAccept);
     const setCheckAccept = useGlobalStore(s => s.setAreYouSureAccept);
-
-    let catAllowedTotal = categoryAmount;
-    let incomeType = 1;
-    if (currentSectionType === 'income') {
-        catAllowedTotal = categoryAmount * -1;
-        incomeType = -1;
-    }
 
     const addNewTransClick = () => {
         setTransactionCategory({
@@ -214,17 +208,9 @@ export default function EditCategory() {
             setCategoryAmount(currentCategoryDetails.amount);
             setCategoryNote(currentCategoryDetails.categoryNote || '');
             setEditMode(false);
-            setCategorySum(grabCategorySum(currentCategoryID));
         }
         setErrorText('');
     }, [openEditCategory]);
-
-    React.useEffect(() => {
-        if (!openEditCategory) return;
-        if (currentCategoryDetails) {
-            setCategorySum(grabCategorySum(currentCategoryID));
-        }
-    }, [transactionsArray]);
 
     return (
         <>
@@ -281,27 +267,16 @@ export default function EditCategory() {
                                         </Box>
                                     </>
                                     : null}
-                                <Stack direction='row' justifyContent='space-between'>
-                                    <Paper elevation={1} sx={{ borderRadius: 3 }}>
-                                        <Box display='flex' alignItems='center' justifyContent='space-evenly' sx={{ width: '100%', p: 1, textAlign: 'center' }}>
-                                            <Paper elevation={3} sx={{ px: 1 }}>
-                                                <Typography color='text.secondary' variant='body1'>Planned: {formatter.format(catAllowedTotal * incomeType)}</Typography>
-                                            </Paper>
-                                            <Paper elevation={3} sx={{ mx: 1, px: 1 }}>
-                                                <Typography color='text.secondary' variant='body1'>Tracked: {formatter.format(categorySum)}</Typography>
-                                            </Paper>
-                                            <Paper elevation={3} sx={{ px: 1 }}>
-                                                <Typography
-                                                    color={(catAllowedTotal + categorySum) * incomeType < 0 ? 'error.main' : 'success.main'}
-                                                    style={{ fontWeight: 'bold' }} variant='body1'>
-                                                    Remaining: {formatter.format((catAllowedTotal + categorySum) * incomeType)}
-                                                </Typography>
-                                            </Paper>
-                                        </Box>
-                                        <LinearProgress sx={{ height: 10, borderBottomRightRadius: 6, borderBottomLeftRadius: 6 }}
-                                            variant="determinate" color={((-1 * categorySum) / categoryAmount) > 1 ? 'error' : 'success'}
-                                            value={((-1 * categorySum * incomeType) / categoryAmount) * 100} />
-                                    </Paper>
+                                <Stack direction='row' justifyContent='space-between' alignItems='flex-start' spacing={1}>
+                                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                                        <CategorySummary
+                                            planned={Number(categoryAmount) || 0}
+                                            transactions={categoryTransactions}
+                                            isIncome={currentSectionType === 'income'}
+                                            budgetMonth={currentBudget?.month}
+                                            budgetYear={currentBudget?.year}
+                                        />
+                                    </Box>
                                     {bigger ?
                                         <Fab color="secondary" variant='extended' onClick={addNewTransClick}>
                                             <AddIcon /> Add Transaction
@@ -364,12 +339,12 @@ export default function EditCategory() {
                                                     </Typography>
                                                 </Box>
                                                 <Collapse in={section.expanded}>
-                                                    <Paper elevation={4} sx={{ width: '100%', borderRadius: 3 }}>
+                                                    <Paper elevation={CARD_ELEVATION} sx={{ ...cardSx, width: '100%' }}>
                                                         <List dense disablePadding>
                                                             {section.transactions.map((row, index, arr) => (
                                                                 <React.Fragment key={row.recordID}>
                                                                     <ListItem disablePadding divider={index < arr.length - 1}>
-                                                                        <ListItemButton onClick={() => openTransaction(row.recordID)}>
+                                                                        <ListItemButton onClick={() => openTransaction(row.recordID)} sx={rowHoverSx}>
                                                                             <Grid container columnSpacing={1} alignItems='center' sx={{ width: '100%' }}>
                                                                                 <Grid size={1.3}>
                                                                                     <Avatar sx={{ ml: -1, fontSize: 15, textAlign: 'center', bgcolor: 'text.secondary' }}>
@@ -396,13 +371,18 @@ export default function EditCategory() {
                                         ))}
                                     </Stack>
                                 ) : (
-                                    <Paper elevation={5} sx={{ width: '100%', borderRadius: 3 }}>
-                                        <List dense>
-                                            <ListItem disablePadding>
-                                                <Typography color='text.secondary' variant='h6' sx={{ fontWeight: '600', ml: 1 }}>Nothing Tracked Here</Typography>
-                                            </ListItem>
-                                        </List>
-                                    </Paper>
+                                    <Box sx={{ width: '100%' }}>
+                                        <EmptyState
+                                            dense
+                                            icon={<ReceiptLongIcon />}
+                                            title='Nothing tracked here'
+                                            description='Add a transaction to this category to see it listed here.'
+                                            actionLabel='Add Transaction'
+                                            actionIcon={<AddIcon />}
+                                            onAction={addNewTransClick}
+                                            actionDisabled={offline}
+                                        />
+                                    </Box>
                                 )}
                             </Grid>
                         </Grid>
