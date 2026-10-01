@@ -4,20 +4,19 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import Grid from '@mui/material/Grid';
 import { useModalStore } from '../../store/modalStore';
 import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Paper from "@mui/material/Paper";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import { dialogPaperStyles, useGlobalStore } from "../../store/globalStore";
 import { v4 as uuidv4 } from "uuid";
 import dayjs, { Dayjs } from "dayjs";
 import { useTableStore } from "../../store/tableStore";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import TransactionFields from "../subcomponents/TransactionFields";
+import { useCategoryGroups } from "../extras/useCategoryGroups";
 import Autocomplete from '@mui/material/Autocomplete';
-import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import ToggleButton from "@mui/material/ToggleButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import AddIcon from "@mui/icons-material/Add";
@@ -26,9 +25,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import IconButton from "@mui/material/IconButton";
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
-import { styled, lighten, darken } from '@mui/system';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import { styled, lighten, darken, alpha } from '@mui/system';
 import Alert from '@mui/material/Alert';
 import AltRouteIcon from '@mui/icons-material/AltRoute';
 import ReadMoreOutlinedIcon from '@mui/icons-material/ReadMoreOutlined';
@@ -74,39 +71,7 @@ export default function AddTransaction() {
     ]
     const [splitArr, setSplitArr] = React.useState(splitArrDef);
     const [transactionDate, setTransactionDate] = React.useState<Dayjs | null>(dayjs())
-    const handleTypeChange = (
-        event: React.MouseEvent<HTMLElement>,
-        newType: string,
-    ) => {
-        if (newType !== null) {
-            //@ts-ignore
-            setTransactionType(newType);
-        }
-    };
-    const categoriesArray = useTableStore(s => s.categories)
-    const sectionsArray = useTableStore(s => s.sections)
-    const transactionsArr = useTableStore(s => s.transactions)
-    const categoryGroups = categoriesArray.map((option) => {
-        const section = sectionsArray.find(x => x.recordID === option.sectionID)
-        const sectionName = section?.sectionName ?? ""
-        const expenses = transactionsArr.filter(x => x.categoryID === option.recordID && x.transactionType === "expense").reduce((a, o) => a + o.amount, 0)
-        const incomes = transactionsArr.filter(x => x.categoryID === option.recordID && x.transactionType === "income").reduce((a, o) => a + o.amount, 0)
-        const tracked = Math.round((incomes - expenses + Number.EPSILON) * 100) / 100
-        const remaining = section?.sectionType === 'income'
-            ? option.amount + tracked
-            : option.amount + tracked
-        return {
-            sectionName,
-            id: option.recordID,
-            label: option.categoryName,
-            remaining: Math.round(remaining * 100) / 100,
-        };
-    }).sort(function (a, b) {
-        if (a.sectionName < b.sectionName) { return -1; }
-        if (a.sectionName > b.sectionName) { return 1; }
-        return 0;
-    }
-    );
+    const categoryGroups = useCategoryGroups();
     const setTransactionsArray = useTableStore(s => s.setTransactions)
     const setSnackText = useGlobalStore(s => s.setSnackBarText);
     const setSnackSev = useGlobalStore(s => s.setSnackBarSeverity);
@@ -293,203 +258,167 @@ export default function AddTransaction() {
                 slotProps={{ paper: bigger ? dialogPaperStyles : undefined }}
             >
                 <Box sx={{ bgcolor: 'background.paper', height: '100%' }} component='form' onSubmit={handleSubmit}>
-                    <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        New Transaction
-                        <ToggleButton
-                            value="check"
-                            selected={splitBool}
-                            size='medium'
-                            color="error"
-                            onChange={() => {
-                                setSplitBool(!splitBool);
-                            }}>
-                            <AltRouteIcon />
-                            Split
-                        </ToggleButton>
-                        <IconButton onClick={() => setAddNewTransaction(false)}><CloseIcon /></IconButton>
+                    <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+                        <span>New Transaction</span>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <ToggleButton
+                                value="check"
+                                selected={splitBool}
+                                size='small'
+                                color="primary"
+                                onChange={() => { setSplitBool(!splitBool); }}
+                                sx={{ borderRadius: 2, px: 1.5, textTransform: 'none', fontWeight: 600 }}
+                            >
+                                <AltRouteIcon fontSize='small' sx={{ mr: 0.5 }} />
+                                Split
+                            </ToggleButton>
+                            <IconButton onClick={() => setAddNewTransaction(false)}><CloseIcon /></IconButton>
+                        </Box>
                     </DialogTitle>
                     <DialogContent dividers>
-                        <Grid container spacing={2}>
-                            {currentBudget.month !== dayjs().format('MMMM') || currentBudget.year !== Number(dayjs().format('YYYY')) ? (
-                                <Grid size={12}>
-                                    <Alert severity="warning" variant="outlined" sx={{ py: 0 }}>
-                                        You're adding to {currentBudget.month} {currentBudget.year}
-                                    </Alert>
-                                </Grid>
-                            ) : null}
-                            {splitBool ?
-                                <>
-                                    <Grid size={12}><Typography variant='subtitle2'>{"Left to track: " + formatter.format(transactionAmount - splitArr.reduce((accumulator, object) => {
-                                        return accumulator + Number(object.transAmount);
-                                    }, 0))}</Typography></Grid>
-                                </>
-                                :
-                                <Grid size={12}>
-                                    <ToggleButtonGroup
-                                        color={transactionType === 'income' ? 'success' : 'warning'}
-                                        value={transactionType}
-                                        fullWidth
-                                        exclusive
-                                        onChange={handleTypeChange}
-                                        size='small'
-                                    >
-                                        <ToggleButton value="income"><TrendingUpIcon sx={{ mr: 0.5 }} />Income</ToggleButton>
-                                        <ToggleButton value="expense"><TrendingDownIcon sx={{ mr: 0.5 }} />Expense</ToggleButton>
-                                    </ToggleButtonGroup>
-                                </Grid>
-                            }
-                            <Grid size={{ xs: 6, md: 12 }}>
-                                <TextField
-                                    onFocus={handleFocus}
-                                    fullWidth
-                                    autoFocus
-                                    value={transactionAmount}
-                                    onChange={(event: any) => setTransactionAmount(event.target.value)}
-                                    type="number"
-                                    slotProps={{
-                                        input: {
-                                            startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                                        },
-                                        htmlInput: { step: '.01' },
-                                    }}
-                                    placeholder='Amount'
-                                    label={splitBool ? "Total Amount" : "Amount"}
-                                />
-                            </Grid>
-                            <Grid size={{ xs: 6, md: 12 }}>
-                                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                    <DatePicker
-                                        closeOnSelect
-                                        label="Date"
-                                        value={transactionDate}
-                                        onChange={(newValue) => {
-                                            setTransactionDate(newValue);
-                                        }}
-                                        slotProps={{
-                                            actionBar: { actions: ['today'] },
-                                            textField: (params) => <TextField onFocus={handleFocus} {...params} fullWidth />,
-                                        }}
-                                        sx={{ width: '100%' }}
-                                    />
-                                </LocalizationProvider>
-                            </Grid>
-                            <Grid size={12}>
-                                <TextField
-                                    fullWidth
-                                    onFocus={handleFocus}
-                                    value={transactionTitle}
-                                    onChange={(event: any) => setTransactionTitle(event.target.value)}
-                                    type="text"
-                                    label={splitBool ? "Overall Title" : "Title"}
-                                    required
-                                />
-                            </Grid>
-                            {splitBool ?
-                                <></>
-                                :
-                                <Grid size={12}>
-                                    <Autocomplete
-                                        disablePortal={false}
-                                        options={categoryGroups}
-                                        getOptionLabel={(option) => option.label}
-                                        groupBy={(option) => option.sectionName}
-                                        fullWidth
-                                        value={transactionCategory}
-                                        onChange={(event: any, newValue: any) => {
-                                            setTransactionCategory(newValue)
-                                        }}
-                                        renderInput={(params) => <TextField onFocus={handleFocus} margin="none" {...params} label="Category" />}
-                                        renderOption={(props, option) => (
-                                            <li {...props} key={option.id}>
-                                                <Box display='flex' justifyContent='space-between' width='100%'>
-                                                    <span>{option.label}</span>
-                                                    <Typography variant='body2' color='text.secondary'>{formatter.format(option.remaining)}</Typography>
-                                                </Box>
-                                            </li>
-                                        )}
-                                        renderGroup={(params) => (
-                                            <li>
-                                                <GroupHeader>{params.group}</GroupHeader>
-                                                <GroupItems>{params.children}</GroupItems>
-                                            </li>
-                                        )}
-                                    />
-                                </Grid>
-                            }
-                            {splitBool ?
-                                <Grid container spacing={1}>
-                                    {splitArr.map((x) => (
-                                        <>
-                                            <Grid size={3.5} key={x.recId}>
-                                                <TextField
-                                                    onFocus={handleFocus}
-                                                    fullWidth
-                                                    autoFocus
+                        {(currentBudget.month !== dayjs().format('MMMM') || currentBudget.year !== Number(dayjs().format('YYYY'))) && (
+                            <Alert severity="warning" variant="outlined" sx={{ py: 0, mb: 2 }}>
+                                You're adding to {currentBudget.month} {currentBudget.year}
+                            </Alert>
+                        )}
+
+                        <TransactionFields
+                            amount={transactionAmount}
+                            onAmountChange={(v) => setTransactionAmount(v as any)}
+                            amountLabel={splitBool ? 'Total Amount' : 'Amount'}
+                            autoFocusAmount
+                            showTypeToggle={!splitBool}
+                            type={transactionType}
+                            onTypeChange={(t) => setTransactionType(t)}
+                            date={transactionDate}
+                            onDateChange={setTransactionDate}
+                            title={transactionTitle}
+                            onTitleChange={setTransactionTitle}
+                            titleLabel={splitBool ? 'Overall Title' : 'Title'}
+                            titleRequired
+                            showCategory={!splitBool}
+                            category={transactionCategory}
+                            onCategoryChange={setTransactionCategory}
+                            categoryGroups={categoryGroups}
+                        />
+
+                        {splitBool && (
+                            <Box sx={{ mt: 2 }}>
+                                {(() => {
+                                    const left = Math.round((Number(transactionAmount) - splitArr.reduce((a, o) => a + Number(o.transAmount), 0)) * 100) / 100;
+                                    const balanced = Math.abs(left) < 0.01;
+                                    return (
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                px: 1.5,
+                                                py: 1,
+                                                mb: 1.5,
+                                                borderRadius: 2,
+                                                bgcolor: (theme) => alpha(balanced ? theme.palette.success.main : theme.palette.warning.main, 0.12),
+                                            }}
+                                        >
+                                            <Typography variant='subtitle2' color='text.secondary'>Left to allocate</Typography>
+                                            <Typography variant='subtitle2' sx={{ fontWeight: 700 }} color={balanced ? 'success.main' : 'warning.main'}>
+                                                {formatter.format(left)}
+                                            </Typography>
+                                        </Box>
+                                    );
+                                })()}
+                                <Stack spacing={1.5}>
+                                    {splitArr.map((x, idx) => (
+                                        <Paper
+                                            key={x.recId}
+                                            elevation={0}
+                                            sx={{
+                                                p: 1.5,
+                                                borderRadius: 2,
+                                                border: '1px solid',
+                                                borderColor: 'divider',
+                                            }}
+                                        >
+                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                                                <Typography variant='caption' color='text.secondary' sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                                    Split {idx + 1}
+                                                </Typography>
+                                                <IconButton
                                                     size='small'
-                                                    value={x.transAmount}
-                                                    onChange={(event: any) => changeSplitAmount(x.recId, event.target.value)}
-                                                    type="number"
-                                                    slotProps={{
-                                                        input: {
-                                                            startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                                                        },
-                                                        htmlInput: { step: '.01' }
-                                                    }}
-                                                    placeholder='Amount'
-                                                    label="Amount"
-                                                    variant='filled'
-                                                    required
-                                                />
-                                            </Grid>
-                                            <Grid size={6.5}>
+                                                    onClick={() => deleteSplitCat(x.recId)}
+                                                    disabled={splitArr.length <= 1}
+                                                    aria-label='Remove split'
+                                                >
+                                                    <CloseIcon fontSize='small' />
+                                                </IconButton>
+                                            </Box>
+                                            <Stack spacing={1.5}>
                                                 <Autocomplete
                                                     disablePortal={false}
                                                     options={categoryGroups}
                                                     getOptionLabel={(option) => option.label}
                                                     groupBy={(option) => option.sectionName}
                                                     fullWidth
-                                                    size='small'
                                                     value={x.cat}
                                                     onChange={(event: any, newValue: any) => {
                                                         changeSplitCat(x.recId, newValue)
                                                     }}
-                                                    renderInput={(params) => <TextField variant='filled' required onFocus={handleFocus} margin="none" {...params} label="Category" />}
+                                                    renderInput={(params) => <TextField required onFocus={handleFocus} margin="none" {...params} label="Category" />}
                                                     renderOption={(props, option) => (
                                                         <li {...props} key={option.id}>
-                                                            <Box display='flex' justifyContent='space-between' width='100%'>
+                                                            <Box display='flex' justifyContent='space-between' width='100%' gap={1}>
                                                                 <span>{option.label}</span>
-                                                                <Typography variant='body2' color='text.secondary'>{formatter.format(option.remaining)}</Typography>
+                                                                <Typography variant='body2' color={option.remaining < 0 ? 'error.main' : 'text.secondary'} sx={{ flexShrink: 0 }}>{formatter.format(option.remaining)}</Typography>
                                                             </Box>
                                                         </li>
                                                     )}
                                                     renderGroup={(params) => (
-                                                        <li>
+                                                        <li key={params.key}>
                                                             <GroupHeader>{params.group}</GroupHeader>
                                                             <GroupItems>{params.children}</GroupItems>
                                                         </li>
                                                     )}
                                                 />
-                                            </Grid>
-                                            <Grid size={1}>
-                                                <IconButton size='small' title='Allocate rest' onClick={() => allocateRest(x.recId)}><ReadMoreOutlinedIcon /></IconButton>
-                                            </Grid>
-                                            <Grid size={1}>
-                                                <IconButton size='small' onClick={() => deleteSplitCat(x.recId)}><CloseIcon /></IconButton>
-                                            </Grid>
-                                        </>
+                                                <TextField
+                                                    onFocus={handleFocus}
+                                                    fullWidth
+                                                    value={x.transAmount}
+                                                    onChange={(event: any) => changeSplitAmount(x.recId, event.target.value)}
+                                                    type="number"
+                                                    slotProps={{
+                                                        input: {
+                                                            startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                                                            endAdornment: (
+                                                                <InputAdornment position="end">
+                                                                    <Button
+                                                                        size='small'
+                                                                        onClick={() => allocateRest(x.recId)}
+                                                                        startIcon={<ReadMoreOutlinedIcon fontSize='small' />}
+                                                                        sx={{ whiteSpace: 'nowrap', minWidth: 0 }}
+                                                                    >
+                                                                        Rest
+                                                                    </Button>
+                                                                </InputAdornment>
+                                                            ),
+                                                        },
+                                                        htmlInput: { step: '.01' }
+                                                    }}
+                                                    placeholder='Amount'
+                                                    label="Amount"
+                                                    required
+                                                />
+                                            </Stack>
+                                        </Paper>
                                     ))}
-                                    <Grid size={12}>
-                                        <Button fullWidth color='secondary' onClick={addSplit} startIcon={<AddIcon fontSize='small' />}>Add Category Split</Button>
-                                    </Grid>
-                                </Grid>
-                                :
-                                <></>
-                            }
-
-                        </Grid>
+                                    <Button fullWidth variant='outlined' color='secondary' onClick={addSplit} startIcon={<AddIcon fontSize='small' />}>
+                                        Add Category Split
+                                    </Button>
+                                </Stack>
+                            </Box>
+                        )}
                     </DialogContent>
-                    <Box sx={{ mx: 1, mt: 0.5 }}><Typography color='error'>{errorText}</Typography></Box>
-                    <DialogActions>
+                    {errorText && <Box sx={{ mx: 2, mt: 1 }}><Typography color='error' variant='body2'>{errorText}</Typography></Box>}
+                    <DialogActions sx={{ position: 'sticky', bottom: 0, bgcolor: 'background.paper', borderTop: '1px solid', borderColor: 'divider', px: 2, py: 1.5 }}>
                         <Button fullWidth startIcon={<AddIcon />} type='submit' variant='contained'>Add Transaction</Button>
                     </DialogActions>
                 </Box>
