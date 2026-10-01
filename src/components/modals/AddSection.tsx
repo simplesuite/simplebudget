@@ -1,18 +1,14 @@
 import React from 'react';
-import TextField from "@mui/material/TextField";
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import Grid from '@mui/material/Grid';
 import { useModalStore } from '../../store/modalStore';
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { dialogPaperStyles, useGlobalStore } from "../../store/globalStore";
 import { useTableStore } from "../../store/tableStore";
 import { v4 as uuidv4 } from "uuid";
-import ToggleButton from "@mui/material/ToggleButton";
-import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import AddIcon from '@mui/icons-material/Add';
 import { supabase } from "../../lib/supabase";
 import { ensureSession } from "../extras/ensureSession";
@@ -23,8 +19,7 @@ import Button from "@mui/material/Button";
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import OfflineAlert, { useIsOffline } from "../extras/OfflineAlert";
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import SectionFields from "../subcomponents/SectionFields";
 
 export default function AddSection() {
     const setLoadingOpen = useGlobalStore(s => s.setMainLoading)
@@ -33,14 +28,6 @@ export default function AddSection() {
     const setAddNewSection = useModalStore(s => s.setAddSection);
     const [sectionName, setSectionName] = React.useState('');
     const [sectionType, setSectionType] = React.useState('expense');
-    const handleTypeChange = (
-        event: React.MouseEvent<HTMLElement>,
-        newType: string,
-    ) => {
-        if (newType !== null) {
-            setSectionType(newType);
-        }
-    };
     const currentBudget = useTableStore(s => s.currentBudgetAndMonth)
     const sectionsArray = useTableStore(s => s.sections);
     const setSectionArray = useTableStore(s => s.setSections);
@@ -115,34 +102,17 @@ export default function AddSection() {
                         New Section <IconButton onClick={() => setAddNewSection(false)}><CloseIcon /></IconButton>
                     </DialogTitle>
                     <DialogContent dividers>
-                        <Grid container spacing={2}>
-                            <OfflineAlert />
-                            <Grid size={12}>
-                                <ToggleButtonGroup
-                                    color={sectionType === 'income' ? 'success' : 'warning'}
-                                    value={sectionType}
-                                    fullWidth
-                                    exclusive
-                                    onChange={handleTypeChange}
-                                >
-                                    <ToggleButton value="income"><TrendingUpIcon sx={{ mr: 0.5 }} /> Income</ToggleButton>
-                                    <ToggleButton value="expense"><TrendingDownIcon sx={{ mr: 0.5 }} /> Expense</ToggleButton>
-                                </ToggleButtonGroup>
-                            </Grid>
-                            <Grid size={12}>
-                                <TextField
-                                    autoFocus
-                                    fullWidth
-                                    value={sectionName}
-                                    onChange={(event: any) => setSectionName(event.target.value)}
-                                    type="text"
-                                    label="Section Name"
-                                />
-                            </Grid>
-                        </Grid>
+                        <Box sx={{ mb: 1 }}><OfflineAlert /></Box>
+                        <SectionFields
+                            type={sectionType}
+                            onTypeChange={setSectionType}
+                            name={sectionName}
+                            onNameChange={setSectionName}
+                            focusNameKey={addNewSection}
+                        />
                     </DialogContent>
-                    <Box sx={{ mx: 1, mt: 0.5 }}><Typography color='error'>{errorText}</Typography></Box>
-                    <DialogActions>
+                    {errorText && <Box sx={{ mx: 2, mt: 1 }}><Typography color='error' variant='body2'>{errorText}</Typography></Box>}
+                    <DialogActions sx={{ position: 'sticky', bottom: 0, bgcolor: 'background.paper', borderTop: '1px solid', borderColor: 'divider', px: 2, py: 1.5 }}>
                         <Button fullWidth startIcon={<AddIcon />} type='submit' variant='contained' disabled={offline}>Add Section</Button>
                     </DialogActions>
                 </Box>

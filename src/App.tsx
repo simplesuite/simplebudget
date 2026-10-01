@@ -330,7 +330,16 @@ export default function App() {
           <Fab
             color='secondary'
             size="medium"
-            sx={{ position: 'fixed', right: 16, bottom: 'calc(90px + env(safe-area-inset-bottom, 0px))', zIndex: (theme) => theme.zIndex.appBar + 1 }}
+            aria-label="Add transaction"
+            sx={{
+              position: 'fixed',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              // Straddle the top edge of the floating tab bar, centered.
+              bottom: 'calc(48px + env(safe-area-inset-bottom, 0px))',
+              zIndex: (theme) => theme.zIndex.appBar + 1,
+              boxShadow: 6,
+            }}
             onClick={() => setAddNewTransaction(true)}
           >
             <AddIcon />

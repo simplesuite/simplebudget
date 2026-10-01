@@ -220,6 +220,7 @@ export default function EditTransaction() {
                             amount={transactionAmount}
                             onAmountChange={(v) => setTransactionAmount(v as any)}
                             autoFocusAmount
+                            focusAmountKey={openEditTransaction}
                             type={transactionType}
                             onTypeChange={setTransactionType}
                             date={transactionDate}

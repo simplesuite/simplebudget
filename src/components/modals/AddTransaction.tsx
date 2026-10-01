@@ -287,6 +287,7 @@ export default function AddTransaction() {
                             onAmountChange={(v) => setTransactionAmount(v as any)}
                             amountLabel={splitBool ? 'Total Amount' : 'Amount'}
                             autoFocusAmount
+                            focusAmountKey={addNewTransaction}
                             showTypeToggle={!splitBool}
                             type={transactionType}
                             onTypeChange={(t) => setTransactionType(t)}

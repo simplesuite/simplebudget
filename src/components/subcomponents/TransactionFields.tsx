@@ -43,6 +43,12 @@ interface TransactionFieldsProps {
     amountLabel?: string;
     autoFocusAmount?: boolean;
 
+    /**
+     * When this value changes, the amount field is focused + selected. Pass the
+     * modal's open state (or a counter) so reopening re-focuses the amount.
+     */
+    focusAmountKey?: any;
+
     /** Hide the income/expense toggle (e.g. split mode forces expense). */
     showTypeToggle?: boolean;
     type?: string;
@@ -69,6 +75,7 @@ export default function TransactionFields({
     onAmountChange,
     amountLabel = 'Amount',
     autoFocusAmount = false,
+    focusAmountKey,
     showTypeToggle = true,
     type = 'expense',
     onTypeChange,
@@ -85,6 +92,20 @@ export default function TransactionFields({
 }: TransactionFieldsProps) {
     const isIncome = type === 'income';
     const accent = isIncome ? 'success' : 'warning';
+    const amountInputRef = React.useRef<HTMLInputElement>(null);
+
+    React.useEffect(() => {
+        if (focusAmountKey === undefined || focusAmountKey === false || focusAmountKey === null) return;
+        // Defer so the dialog has mounted/transitioned before focusing.
+        const t = setTimeout(() => {
+            const el = amountInputRef.current;
+            if (el) {
+                el.focus();
+                el.select();
+            }
+        }, 50);
+        return () => clearTimeout(t);
+    }, [focusAmountKey]);
 
     return (
         <Box>
@@ -107,6 +128,7 @@ export default function TransactionFields({
                 <TextField
                     variant='standard'
                     autoFocus={autoFocusAmount}
+                    inputRef={amountInputRef}
                     onFocus={selectFocused}
                     value={amount}
                     onChange={(e: any) => onAmountChange(e.target.value)}
