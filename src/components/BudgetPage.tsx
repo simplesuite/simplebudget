@@ -15,7 +15,7 @@ import dayjs from "dayjs";
 import PostAddIcon from '@mui/icons-material/PostAdd';
 import EditCategory from "./modals/EditCategory";
 import LinearProgress from '@mui/material/LinearProgress';
-import Alert from '@mui/material/Alert';
+
 import Collapse from '@mui/material/Collapse';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
@@ -57,6 +57,7 @@ import EmptyState from "./subcomponents/EmptyState";
 import { rowHoverSx, cardSx, CARD_ELEVATION } from "./subcomponents/uiStyles";
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import TouchAppIcon from '@mui/icons-material/TouchApp';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import Tooltip from '@mui/material/Tooltip';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useIsPwa } from "../lib/useIsPwa";
@@ -114,6 +115,16 @@ export default function BudgetPage() {
         return () => observer.disconnect();
     }, []);
     const selectedCategoryID = useModalStore(s => s.currentCategory);
+    const setCurrentCategory = useModalStore(s => s.setCurrentCategory);
+    const setCurrentSection = useModalStore(s => s.setCurrentSection);
+    const setOpenEditCategory = useModalStore(s => s.setEditCategory);
+    const openCategoryDetail = (categoryID: string, sectionID: string) => {
+        setCurrentSection(sectionID);
+        setCurrentCategory(categoryID);
+        if (!isDesktop) {
+            setOpenEditCategory(true);
+        }
+    };
     const selectedSectionID = useModalStore(s => s.currentSection);
     const setCurrentTransaction = useModalStore(s => s.setCurrentTransaction);
     const setOpenEditTransaction = useModalStore(s => s.setEditTransaction);
@@ -513,38 +524,86 @@ export default function BudgetPage() {
                         </Box>
 
                         {overBudgetCategories.length > 0 && (
-                            <Alert
-                                severity="warning"
-                                variant="outlined"
-                                sx={{ py: 0, cursor: 'pointer', userSelect: 'none' }}
-                                onClick={() => setOverBudgetExpanded(prev => !prev)}
-                                action={overBudgetExpanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+                            <Paper
+                                elevation={0}
+                                sx={{
+                                    ...cardSx,
+                                    overflow: 'hidden',
+                                    border: '1px solid',
+                                    borderColor: (theme) => alpha(theme.palette.error.main, 0.4),
+                                    backgroundColor: (theme) => alpha(theme.palette.error.main, 0.06),
+                                }}
                             >
-                                <Box>
-                                    {overBudgetCategories.length} {overBudgetCategories.length === 1 ? 'category' : 'categories'} over budget by {formatter.format(overBudgetTotal)}
-                                    <Collapse in={overBudgetExpanded}>
-                                        <List dense disablePadding sx={{ mt: 0.5 }}>
-                                            {overBudgetCategories.map(cat => {
-                                                const expenses = transactionsArray
-                                                    .filter(t => t.categoryID === cat.recordID && t.transactionType === 'expense')
-                                                    .reduce((a, t) => a + t.amount, 0);
-                                                const incomes = transactionsArray
-                                                    .filter(t => t.categoryID === cat.recordID && t.transactionType === 'income')
-                                                    .reduce((a, t) => a + t.amount, 0);
-                                                const overBy = (expenses - incomes) - cat.amount;
-                                                return (
-                                                    <ListItem key={cat.recordID} disablePadding sx={{ py: 0.25 }}>
-                                                        <Typography variant="body2" sx={{ width: '100%', display: 'flex', justifyContent: 'space-between' }}>
-                                                            <span>{cat.categoryName}</span>
-                                                            <span style={{ fontWeight: 600 }}>{formatter.format(overBy)}</span>
-                                                        </Typography>
-                                                    </ListItem>
-                                                );
-                                            })}
-                                        </List>
-                                    </Collapse>
+                                {/* Header (clickable to expand/collapse) */}
+                                <Box
+                                    onClick={() => setOverBudgetExpanded(prev => !prev)}
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                        px: 1.5,
+                                        py: 1,
+                                        cursor: 'pointer',
+                                        userSelect: 'none',
+                                        '&:hover': { backgroundColor: (theme) => alpha(theme.palette.error.main, 0.08) },
+                                    }}
+                                >
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            width: 32,
+                                            height: 32,
+                                            borderRadius: '50%',
+                                            flexShrink: 0,
+                                            color: 'error.main',
+                                            bgcolor: (theme) => alpha(theme.palette.error.main, 0.15),
+                                        }}
+                                    >
+                                        <WarningAmberIcon fontSize='small' />
+                                    </Box>
+                                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                                        <Typography variant='body2' sx={{ fontWeight: 700, color: 'error.main', lineHeight: 1.2 }}>
+                                            {overBudgetCategories.length} {overBudgetCategories.length === 1 ? 'category' : 'categories'} over budget
+                                        </Typography>
+                                        <Typography variant='caption' color='text.secondary'>
+                                            {formatter.format(overBudgetTotal)} over plan
+                                        </Typography>
+                                    </Box>
+                                    {overBudgetExpanded ? <ExpandLessIcon color='action' /> : <ExpandMoreIcon color='action' />}
                                 </Box>
-                            </Alert>
+                                <Collapse in={overBudgetExpanded}>
+                                    <List disablePadding sx={{ pb: 0.5 }}>
+                                        {overBudgetCategories.map(cat => {
+                                            const expenses = transactionsArray
+                                                .filter(t => t.categoryID === cat.recordID && t.transactionType === 'expense')
+                                                .reduce((a, t) => a + t.amount, 0);
+                                            const incomes = transactionsArray
+                                                .filter(t => t.categoryID === cat.recordID && t.transactionType === 'income')
+                                                .reduce((a, t) => a + t.amount, 0);
+                                            const overBy = (expenses - incomes) - cat.amount;
+                                            return (
+                                                <ListItem key={cat.recordID} disablePadding divider>
+                                                    <ListItemButton
+                                                        onClick={() => openCategoryDetail(cat.recordID, cat.sectionID)}
+                                                        sx={{ px: 1.5, py: 0.75, ...rowHoverSx }}
+                                                    >
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: 1 }}>
+                                                            <Typography variant='body2' sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+                                                                {cat.categoryName}
+                                                            </Typography>
+                                                            <Typography variant='body2' sx={{ fontWeight: 700, flexShrink: 0 }} color='error.main'>
+                                                                +{formatter.format(overBy)}
+                                                            </Typography>
+                                                        </Box>
+                                                    </ListItemButton>
+                                                </ListItem>
+                                            );
+                                        })}
+                                    </List>
+                                </Collapse>
+                            </Paper>
                         )}
 
                         {mainLoading && sectionsArray.length === 0 && (
