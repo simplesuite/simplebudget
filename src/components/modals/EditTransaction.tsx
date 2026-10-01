@@ -4,7 +4,6 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import Grid from '@mui/material/Grid';
 import { useModalStore } from '../../store/modalStore';
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -15,13 +14,8 @@ import {
 } from "../../store/globalStore";
 import dayjs, { Dayjs } from "dayjs";
 import { useTableStore } from "../../store/tableStore";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import Autocomplete from '@mui/material/Autocomplete';
-import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
-import ToggleButton from "@mui/material/ToggleButton";
-import InputAdornment from "@mui/material/InputAdornment";
+import TransactionFields from "../subcomponents/TransactionFields";
+import { useCategoryGroups } from "../extras/useCategoryGroups";
 import { supabase } from "../../lib/supabase";
 import { ensureSession } from "../extras/ensureSession";
 import { withNetworkTimeout } from "../../lib/networkUtils";
@@ -35,30 +29,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import MenuItem from "@mui/material/MenuItem";
 import DeleteIcon from "@mui/icons-material/Delete";
 import Menu from "@mui/material/Menu";
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import { styled, lighten, darken } from '@mui/system';
 import OfflineAlert, { useIsOffline } from "../extras/OfflineAlert";
-
-const GroupHeader = styled('div')(({ theme }) => ({
-    position: 'sticky',
-    top: '-8px',
-    padding: '4px 10px',
-    color: theme.palette.primary.main,
-    backgroundColor:
-        theme.palette.mode === 'light'
-            ? lighten(theme.palette.primary.light, 0.85)
-            : darken(theme.palette.primary.main, 0.8),
-}));
-
-const GroupItems = styled('ul')({
-    padding: 0,
-});
-
-const formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-});
 
 export default function EditTransaction() {
     const setLoadingOpen = useGlobalStore(s => s.setMainLoading)
@@ -87,36 +58,7 @@ export default function EditTransaction() {
     const [deleteTrans, setDeleteTrans] = React.useState(false)
     const theme = useTheme();
     const bigger = useMediaQuery(theme.breakpoints.up('sm'));
-    const handleTypeChange = (
-        event: React.MouseEvent<HTMLElement>,
-        newType: string,
-    ) => {
-        if (newType !== null) {
-            setTransactionType(newType);
-        }
-    };
-    const categoriesArray = useTableStore(s => s.categories)
-    const sectionsArray = useTableStore(s => s.sections)
-    const transactionsArr = useTableStore(s => s.transactions)
-    const categoryGroups = categoriesArray.map((option) => {
-        const section = sectionsArray.find(x => x.recordID === option.sectionID)
-        const sectionName = section?.sectionName ?? ""
-        const expenses = transactionsArr.filter(x => x.categoryID === option.recordID && x.transactionType === "expense").reduce((a, o) => a + o.amount, 0)
-        const incomes = transactionsArr.filter(x => x.categoryID === option.recordID && x.transactionType === "income").reduce((a, o) => a + o.amount, 0)
-        const tracked = Math.round((incomes - expenses + Number.EPSILON) * 100) / 100
-        const remaining = option.amount + tracked
-        return {
-            sectionName,
-            id: option.recordID,
-            label: option.categoryName,
-            remaining: Math.round(remaining * 100) / 100,
-        };
-    }).sort(function (a, b) {
-        if (a.sectionName < b.sectionName) { return -1; }
-        if (a.sectionName > b.sectionName) { return 1; }
-        return 0;
-    }
-    );
+    const categoryGroups = useCategoryGroups();
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const moreOpen = Boolean(anchorEl);
     const handleClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -191,7 +133,6 @@ export default function EditTransaction() {
     async function handleSubmit(event: any) {
         event.preventDefault();
         setErrorText('')
-        console.log(transactionCategory)
         if (verifyInputs()) {
             setLoadingOpen(true)
             try {
@@ -237,11 +178,6 @@ export default function EditTransaction() {
             }
         }
     }
-    const handleFocus = (event: any) => {
-        if (event) {
-            event.target.select()
-        }
-    };
     React.useEffect(() => {
         if (!openEditTransaction) return;
         if (currentTransactionDetails) {
@@ -279,99 +215,25 @@ export default function EditTransaction() {
                         <IconButton onClick={() => setOpenEditTransaction(false)}><CloseIcon /></IconButton>
                     </DialogTitle>
                     <DialogContent dividers>
-                        <Grid container spacing={2}>
-                            <OfflineAlert />
-                            <Grid size={12}>
-                                <ToggleButtonGroup
-                                    color={transactionType === 'income' ? 'success' : 'warning'}
-                                    value={transactionType}
-                                    fullWidth
-                                    onFocus={handleFocus}
-                                    exclusive
-                                    onChange={handleTypeChange}
-                                    size='small'
-                                >
-                                    <ToggleButton value="income"><TrendingUpIcon sx={{ mr: 0.5 }} />Income</ToggleButton>
-                                    <ToggleButton value="expense"><TrendingDownIcon sx={{ mr: 0.5 }} />Expense</ToggleButton>
-                                </ToggleButtonGroup>
-                            </Grid>
-                            <Grid size={{ xs: 6, md: 12 }}>
-                                <TextField
-                                    autoFocus
-                                    onFocus={handleFocus}
-                                    fullWidth
-                                    value={transactionAmount}
-                                    onChange={(event: any) => setTransactionAmount(event.target.value)}
-                                    type="number"
-                                    slotProps={{
-                                        input: {
-                                            startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                                        },
-                                        htmlInput: { step: '.01' },
-                                    }}
-                                    placeholder='Amount'
-                                    label="Amount"
-                                />
-                            </Grid>
-                            <Grid size={{ xs: 6, md: 12 }}>
-                                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                    <DatePicker
-                                        closeOnSelect
-                                        label="Date"
-                                        value={transactionDate}
-                                        onChange={(newValue) => {
-                                            setTransactionDate(newValue);
-                                        }}
-                                        slotProps={{
-                                            actionBar: { actions: ['today'] },
-                                            textField: (params) => <TextField {...params} onFocus={handleFocus} fullWidth />,
-                                        }}
-                                        sx={{ width: '100%' }}
-                                    />
-                                </LocalizationProvider>
-                            </Grid>
-                            <Grid size={12}>
-                                <TextField
-                                    fullWidth
-                                    onFocus={handleFocus}
-                                    value={transactionTitle}
-                                    onChange={(event: any) => setTransactionTitle(event.target.value)}
-                                    type="text"
-                                    label="Title"
-                                />
-                            </Grid>
-                            <Grid size={12}>
-                                <Autocomplete
-                                    disablePortal={false}
-                                    options={categoryGroups}
-                                    getOptionLabel={(option) => option.label}
-                                    groupBy={(option) => option.sectionName}
-                                    fullWidth
-                                    value={transactionCategory}
-                                    onChange={(event: any, newValue: any) => {
-                                        setTransactionCategory(newValue)
-                                    }}
-                                    renderInput={(params) => <TextField onFocus={handleFocus} margin="none" {...params} label="Category" />}
-                                    renderOption={(props, option) => (
-                                        <li {...props} key={option.id}>
-                                            <Box display='flex' justifyContent='space-between' width='100%'>
-                                                <span>{option.label}</span>
-                                                <Typography variant='body2' color='text.secondary'>{formatter.format(option.remaining)}</Typography>
-                                            </Box>
-                                        </li>
-                                    )}
-                                    renderGroup={(params) => (
-                                        <li>
-                                            <GroupHeader>{params.group}</GroupHeader>
-                                            <GroupItems>{params.children}</GroupItems>
-                                        </li>
-                                    )}
-                                />
-                            </Grid>
-                        </Grid>
+                        <Box sx={{ mb: 1 }}><OfflineAlert /></Box>
+                        <TransactionFields
+                            amount={transactionAmount}
+                            onAmountChange={(v) => setTransactionAmount(v as any)}
+                            autoFocusAmount
+                            focusAmountKey={openEditTransaction}
+                            type={transactionType}
+                            onTypeChange={setTransactionType}
+                            date={transactionDate}
+                            onDateChange={setTransactionDate}
+                            title={transactionTitle}
+                            onTitleChange={setTransactionTitle}
+                            category={transactionCategory}
+                            onCategoryChange={setTransactionCategory}
+                            categoryGroups={categoryGroups}
+                        />
                     </DialogContent>
-                    <Box sx={{ mx: 1, mt: 0.5 }}><Typography color='error'>{errorText}</Typography></Box>
-                    <DialogActions>
+                    {errorText && <Box sx={{ mx: 2, mt: 1 }}><Typography color='error' variant='body2'>{errorText}</Typography></Box>}
+                    <DialogActions sx={{ position: 'sticky', bottom: 0, bgcolor: 'background.paper', borderTop: '1px solid', borderColor: 'divider', px: 2, py: 1.5 }}>
                         <Button fullWidth startIcon={<SaveIcon />} variant='contained' type='submit' disabled={offline}>Save Changes</Button>
                     </DialogActions>
                 </Box>

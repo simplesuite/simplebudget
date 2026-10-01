@@ -32,6 +32,33 @@ export default function useCategoryActions() {
     const currentSection = sectionsArray.find(s => s.recordID === currentSectionID);
     const currentSectionType = currentSection?.sectionType;
 
+    // --- Preview values so the UI can explain what each action will do ---
+
+    // Balance: planned amount becomes the absolute tracked total for this category.
+    const balanceTarget = Math.round(Math.abs(grabCategorySum(currentCategoryID)) * 100) / 100;
+
+    // Allocate: planned amount becomes the leftover unbudgeted income.
+    const allocateTarget = (() => {
+        const totalIncome = categoryArray
+            .filter(c => sectionsArray.find(s => s.recordID === c.sectionID)?.sectionType === 'income')
+            .reduce((acc, c) => acc + Number(c.amount), 0);
+        let remaining: number;
+        if (currentSectionType === 'income') {
+            const otherIncome = categoryArray
+                .filter(c => sectionsArray.find(s => s.recordID === c.sectionID)?.sectionType === 'income')
+                .filter(c => c.recordID !== currentCategoryID)
+                .reduce((acc, c) => acc + Number(c.amount), 0);
+            remaining = totalIncome - otherIncome;
+        } else {
+            const totalExpense = categoryArray
+                .filter(c => sectionsArray.find(s => s.recordID === c.sectionID)?.sectionType === 'expense')
+                .filter(c => c.recordID !== currentCategoryID)
+                .reduce((acc, c) => acc + Number(c.amount), 0);
+            remaining = totalIncome - totalExpense;
+        }
+        return Math.round(Math.max(remaining, 0) * 100) / 100;
+    })();
+
     async function balanceCategory(): Promise<string | null> {
         const categorySum = grabCategorySum(currentCategoryID);
         setLoadingOpen(true);
@@ -61,25 +88,7 @@ export default function useCategoryActions() {
     }
 
     async function allocateRestOfBudget(): Promise<string | null> {
-        const totalIncome = categoryArray
-            .filter(c => sectionsArray.find(s => s.recordID === c.sectionID)?.sectionType === 'income')
-            .reduce((acc, c) => acc + Number(c.amount), 0);
-
-        let remaining: number;
-        if (currentSectionType === 'income') {
-            const otherIncome = categoryArray
-                .filter(c => sectionsArray.find(s => s.recordID === c.sectionID)?.sectionType === 'income')
-                .filter(c => c.recordID !== currentCategoryID)
-                .reduce((acc, c) => acc + Number(c.amount), 0);
-            remaining = totalIncome - otherIncome;
-        } else {
-            const totalExpense = categoryArray
-                .filter(c => sectionsArray.find(s => s.recordID === c.sectionID)?.sectionType === 'expense')
-                .filter(c => c.recordID !== currentCategoryID)
-                .reduce((acc, c) => acc + Number(c.amount), 0);
-            remaining = totalIncome - totalExpense;
-        }
-        remaining = Math.round(Math.max(remaining, 0) * 100) / 100;
+        const remaining = allocateTarget;
 
         setLoadingOpen(true);
         try {
@@ -183,5 +192,7 @@ export default function useCategoryActions() {
         currentCategory,
         currentSection,
         currentSectionType,
+        balanceTarget,
+        allocateTarget,
     };
 }

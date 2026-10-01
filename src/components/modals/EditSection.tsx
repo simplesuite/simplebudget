@@ -1,10 +1,8 @@
 import React from 'react';
-import TextField from "@mui/material/TextField";
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import Grid from '@mui/material/Grid';
 import { useModalStore } from '../../store/modalStore';
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -27,11 +25,8 @@ import Stack from "@mui/material/Stack";
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
-import ToggleButton from "@mui/material/ToggleButton";
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import OfflineAlert, { useIsOffline } from "../extras/OfflineAlert";
+import SectionFields from "../subcomponents/SectionFields";
 
 export default function EditSection() {
     const setLoadingOpen = useGlobalStore(s => s.setMainLoading)
@@ -48,14 +43,6 @@ export default function EditSection() {
     let currentSectionDetails = sectionsArray.find(x => x.recordID === currentSectionID)
     const [sectionName, setSectionName] = React.useState('');
     const [sectionType, setSectionType] = React.useState('expense');
-    const handleTypeChange = (
-        event: React.MouseEvent<HTMLElement>,
-        newType: string,
-    ) => {
-        if (newType !== null) {
-            setSectionType(newType);
-        }
-    };
     const setSnackText = useGlobalStore(s => s.setSnackBarText);
     const setSnackSev = useGlobalStore(s => s.setSnackBarSeverity);
     const setSnackOpen = useGlobalStore(s => s.setSnackBarOpen);
@@ -193,11 +180,6 @@ export default function EditSection() {
             }
         }
     }
-    const handleFocus = (event: any) => {
-        if (event) {
-            event.target.select()
-        }
-    };
     React.useEffect(() => {
         if (!openEditSection) return;
         if (currentSectionDetails) {
@@ -232,35 +214,17 @@ export default function EditSection() {
                         <IconButton onClick={() => setOpenEditSection(false)}><CloseIcon /></IconButton>
                     </DialogTitle>
                     <DialogContent dividers>
-                        <Grid container spacing={2}>
-                            <OfflineAlert />
-                            <Grid size={12}>
-                                <ToggleButtonGroup
-                                    color={sectionType === 'income' ? 'success' : 'warning'}
-                                    value={sectionType}
-                                    fullWidth
-                                    exclusive
-                                    onChange={handleTypeChange}
-                                >
-                                    <ToggleButton value="income"><TrendingUpIcon sx={{ mr: 0.5 }} />Income</ToggleButton>
-                                    <ToggleButton value="expense"><TrendingDownIcon sx={{ mr: 0.5 }} />Expense</ToggleButton>
-                                </ToggleButtonGroup>
-                            </Grid>
-                            <Grid size={12}>
-                                <TextField
-                                    autoFocus
-                                    fullWidth
-                                    onFocus={handleFocus}
-                                    value={sectionName}
-                                    onChange={(event: any) => setSectionName(event.target.value)}
-                                    type="text"
-                                    label="Section Name"
-                                />
-                            </Grid>
-                        </Grid>
+                        <Box sx={{ mb: 1 }}><OfflineAlert /></Box>
+                        <SectionFields
+                            type={sectionType}
+                            onTypeChange={setSectionType}
+                            name={sectionName}
+                            onNameChange={setSectionName}
+                            focusNameKey={openEditSection}
+                        />
                     </DialogContent>
-                    <Box sx={{ mx: 1, mt: 0.5 }}><Typography color='error'>{errorText}</Typography></Box>
-                    <DialogActions>
+                    {errorText && <Box sx={{ mx: 2, mt: 1 }}><Typography color='error' variant='body2'>{errorText}</Typography></Box>}
+                    <DialogActions sx={{ position: 'sticky', bottom: 0, bgcolor: 'background.paper', borderTop: '1px solid', borderColor: 'divider', px: 2, py: 1.5 }}>
                         <Button fullWidth startIcon={<SaveIcon />} variant='contained' type='submit' disabled={offline}>Save Changes</Button>
                     </DialogActions>
                 </Box>
